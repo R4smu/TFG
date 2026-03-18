@@ -4,14 +4,22 @@ Cine Novavista trata de digitalizar la gestión de un cine local mediante el des
 ---
 
 
-# 🍿 Introducción
-abc
-
----
-
-
 # 🖥️ Tecnologías utilizadas
-abc
+· TypeScript: lógica de la aplicación y comunicación con Supabase.,
+
+· SQL (PostgreSQL): consultas a la base de datos Supabase.
+
+· Next.js (framework de React): desarrollo del frontend y rutas API.
+
+· TailwindCSS: estilos rápidos y adaptativos.
+
+· Base de datos en la nube: Supabase.
+
+· Editor: Visual Studio Code.
+
+· Control de versiones: Git y GitHub.
+
+· Navegador de prueba: Google Chrome.
 
 ---
 
@@ -43,7 +51,7 @@ Existen 3 tipos de usuarios: usuario invitado, registrado y empleado/administrad
 
 
 # 📁 Estructura del proyecto
-abc
+.
 
 ---
 
@@ -70,23 +78,38 @@ Como se ha mencionado previamente, la base de datos se ha implementado con Supab
 # 💻 Despliegue
 La aplicación final está desplegada Vercel, para acceder a ella, entra en este enlace: 
 
+https://cine-novavista.vercel.app
+
 ---
 
 
 # 🆗 Instalación y ejecución local
-abc
+-1. Clonar el repositorio:   
+Abre la terminal de tu IDE y clona el proyecto desde GitHub utilizando el siguiente comando:  
+git clone https://github.com/R4smu/TFG  
 
----
+Sitúate dentro de la carpeta del proyecto:  
+cd Cine Novavista  
 
+-2. Instalar dependencias: 
+Ejecuta el gestor de paquetes para descargar todas las librerías necesarias (incluyendo Next.js, Tailwind y el SDK de Supabase):  
+npm install  
 
-# ⌨️ Comandos (?)
-abc
+-3. Configurar variables de entorno:  
+Crea un archivo llamado .env.local en la raíz del proyecto. Aquí debes incluir las claves de conexión a tu base de datos Supabase:  
+
+NEXT_PUBLIC_SUPABASE_URL=https://trtbffiyfhzjncmtszhw.supabase.co  
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_b7oOLTNFBse2Bnbs1VE4jg_vA6nbY8D  
+
+-4. Ejecución:  
+Inicia la aplicación en modo local con npm run dev en la terminal dentro de la carpeta del proyecto. Abre tu navegador de prueba y dirígete a http://localhost:3000.
+
 
 ---
 
 
 # 📈 Trayectoría y evolución del proyecto
-abc
+.
 
 ---
 
