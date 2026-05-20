@@ -31,11 +31,9 @@ export default function MisEntradas() {
         return
       }
 
-      // Buscamos el ID del usuario en nuestra tabla
       const { data: userData } = await supabase.from('usuario').select('idusuario').eq('email', user.email).single()
 
       if (userData) {
-        // Traemos sus entradas con la información de la película
         const { data: entradasData } = await supabase
           .from('entrada')
           .select(`
@@ -46,7 +44,6 @@ export default function MisEntradas() {
           .order('fechacompra', { ascending: false })
 
         if (entradasData) {
-          // Ajustamos los tipos que devuelve Supabase
           setEntradas(entradasData as unknown as Entrada[])
         }
       }
@@ -83,10 +80,7 @@ export default function MisEntradas() {
         ) : (
           <div className="space-y-4">
             {entradas.map((entrada) => {
-              // Ajustamos la estructura de los JOINs
               const peli = Array.isArray(entrada.exhibicion.pelicula) ? entrada.exhibicion.pelicula[0] : entrada.exhibicion.pelicula;
-              
-              // Extraemos el ID del ticket de la URL que guardaste (ej: de "/ticket/123" sacamos "123")
               const idUrlTicket = entrada.comprobanteurl.split('/').pop() || entrada.identrada;
 
               return (

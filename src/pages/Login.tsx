@@ -10,7 +10,6 @@ export default function Login() {
   
   const navigate = useNavigate()
 
-  // Añadimos el teléfono a los parámetros que recibe la función
   const procesarAuth = async (email: string, password: string, nombre?: string, telefono?: string) => {
     setCargando(true)
     setError(null)
@@ -20,6 +19,7 @@ export default function Login() {
         // --- INICIO DE SESIÓN ---
         const { error: errorAuth } = await supabase.auth.signInWithPassword({ email, password })
         if (errorAuth) throw new Error("Credenciales incorrectas. Inténtalo de nuevo.")
+        
         navigate('/')
       } else {
         // --- REGISTRO ---
@@ -28,7 +28,6 @@ export default function Login() {
           throw new Error("La contraseña no cumple con los requisitos de seguridad mínimos.");
         }
 
-        // AQUÍ ESTÁ LA MAGIA: Mandamos nombre y teléfono como "metadatos"
         const { error: errorAuth } = await supabase.auth.signUp({ 
           email, 
           password,
@@ -40,14 +39,9 @@ export default function Login() {
           }
         })
 
-        // Si falla (ya sea la contraseña o nuestro Trigger de la BD), saltará este error
         if (errorAuth) throw new Error(errorAuth.message)
 
-        // ¡Y ya está! Hemos borrado el "supabase.from('usuario').insert(...)".
-        // La base de datos lo hace por nosotros en segundo plano.
-
-        alert("¡Registro exitoso! Ya puedes iniciar sesión.")
-        setIsLogin(true) 
+        navigate('/perfil') 
       }
     } catch (err: any) {
       setError(err.message)
@@ -57,7 +51,6 @@ export default function Login() {
   }
 
   return (
-    // Hemos quitado el bg-gray-900 de aquí para que herede de App.tsx
     <div className="flex flex-col items-center justify-center flex-grow p-4 w-full">
       <AuthForm 
         isLogin={isLogin} 

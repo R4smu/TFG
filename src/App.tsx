@@ -14,18 +14,14 @@ function AppContent() {
   const [esadmin, setEsAdmin] = useState(false)
   const [nombreUsuario, setNombreUsuario] = useState('')
 
-  // --- NUEVO: ESTADO DEL TEMA ---
   const [modoOscuro, setModoOscuro] = useState(() => {
-    // Intentamos recuperar la preferencia del usuario del almacenamiento local
     const temaGuardado = localStorage.getItem('tema')
-    // Si no hay nada guardado, por defecto usamos modo oscuro
     return temaGuardado ? temaGuardado === 'dark' : true
   })
 
   const navigate = useNavigate() 
 
   useEffect(() => {
-    // --- NUEVO: APLICAR EL TEMA AL HTML ---
     if (modoOscuro) {
       document.documentElement.classList.add('dark')
       localStorage.setItem('tema', 'dark')
@@ -72,15 +68,14 @@ function AppContent() {
   }
 
   return (
-    // Fíjate en bg-gray-50 dark:bg-gray-900
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       
       <Header 
         session={session} 
         nombreUsuario={nombreUsuario} 
         onLogout={handleCerrarSesion} 
-        modoOscuro={modoOscuro} // Pasamos la variable
-        onToggleTema={() => setModoOscuro(!modoOscuro)} // Pasamos la función
+        modoOscuro={modoOscuro}
+        onToggleTema={() => setModoOscuro(!modoOscuro)}
       />
 
       <main className="flex-grow flex flex-col">

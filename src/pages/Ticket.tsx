@@ -93,8 +93,6 @@ export default function Ticket() {
   const sala = Array.isArray(ticket.exhibicion.sala) ? ticket.exhibicion.sala[0] : ticket.exhibicion.sala
   const asiento = Array.isArray(ticket.asiento) ? ticket.asiento[0] : ticket.asiento
   const comprador = Array.isArray(ticket.usuario) ? ticket.usuario[0] : ticket.usuario
-
-  // Forzamos el QR en blanco y negro para máxima escaneabilidad en lectores láser del cine
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${id}&color=000000&bgcolor=ffffff`
 
   return (
