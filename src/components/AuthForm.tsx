@@ -48,7 +48,6 @@ export default function AuthForm({ isLogin, cargando, error, onSubmit, onToggleM
   const formInvalido = !isLogin && (fuerza < 4 || !passwordsCoinciden);
 
   return (
-    // TARJETA PRINCIPAL: Blanca en claro, gris oscuro en dark
     <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl dark:shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md animate-fade-in transition-colors duration-300">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2 transition-colors">
@@ -70,7 +69,6 @@ export default function AuthForm({ isLogin, cargando, error, onSubmit, onToggleM
           <>
             <div>
               <label className="block text-gray-700 dark:text-gray-400 text-sm font-bold mb-2 transition-colors">Nombre completo</label>
-              {/* INPUTS: Fondo muy clarito en modo claro, oscuro en dark */}
               <input 
                 type="text" 
                 required 
@@ -102,6 +100,10 @@ export default function AuthForm({ isLogin, cargando, error, onSubmit, onToggleM
             required 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onClick={() => {
+              setEmail('')
+              setPassword('')
+            }}
             className="w-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
             placeholder="tu@email.com"
           />
@@ -125,7 +127,6 @@ export default function AuthForm({ isLogin, cargando, error, onSubmit, onToggleM
               className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors p-1 
                 ${mostrarPassword ? 'text-blue-600 dark:text-blue-500' : 'text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400'}`}
             >
-              {/* Ojo Abierto / Cerrado */}
               {mostrarPassword ? (
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               ) : (
