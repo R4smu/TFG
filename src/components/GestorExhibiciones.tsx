@@ -30,6 +30,7 @@ export default function GestorExhibiciones({ pelicula, onClose }: GestorExhibici
   const [salas, setSalas] = useState<Sala[]>([])
   const [cargando, setCargando] = useState(true)
   const [procesando, setProcesando] = useState(false)
+
   const fechaHoy = new Date().toISOString().split('T')[0]
 
   const [formData, setFormData] = useState({
@@ -72,8 +73,11 @@ export default function GestorExhibiciones({ pelicula, onClose }: GestorExhibici
     e.preventDefault()
     setProcesando(true)
 
-    if (formData.fecha < fechaHoy) {
-      alert("Error: No se pueden crear sesiones para fechas que ya han pasado.")
+    const fechaHoraActual = new Date()
+    const fechaHoraElegida = new Date(`${formData.fecha}T${formData.horainicio}`)
+
+    if (fechaHoraElegida < fechaHoraActual) {
+      alert("Error: No se pueden crear sesiones para una fecha u hora que ya han pasado.")
       setProcesando(false)
       return
     }
