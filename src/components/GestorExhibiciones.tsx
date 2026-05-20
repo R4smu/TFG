@@ -30,9 +30,10 @@ export default function GestorExhibiciones({ pelicula, onClose }: GestorExhibici
   const [salas, setSalas] = useState<Sala[]>([])
   const [cargando, setCargando] = useState(true)
   const [procesando, setProcesando] = useState(false)
+  const fechaHoy = new Date().toISOString().split('T')[0]
 
   const [formData, setFormData] = useState({
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: fechaHoy,
     horainicio: '18:00',
     idsala: '',
     preciobase: 7.50
@@ -70,6 +71,12 @@ export default function GestorExhibiciones({ pelicula, onClose }: GestorExhibici
   const crearExhibicion = async (e: React.FormEvent) => {
     e.preventDefault()
     setProcesando(true)
+
+    if (formData.fecha < fechaHoy) {
+      alert("Error: No se pueden crear sesiones para fechas que ya han pasado.")
+      setProcesando(false)
+      return
+    }
 
     const nuevaExhibicion = {
       idpelicula: pelicula.idpelicula,
@@ -114,7 +121,7 @@ export default function GestorExhibiciones({ pelicula, onClose }: GestorExhibici
             <form onSubmit={crearExhibicion} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
               <div>
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 transition-colors">Fecha</label>
-                <input required type="date" name="fecha" value={formData.fecha} onChange={manejarCambio} className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 [color-scheme:light_dark] transition-colors" />
+                <input required type="date" name="fecha" min={fechaHoy} value={formData.fecha} onChange={manejarCambio} className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 [color-scheme:light_dark] transition-colors" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 transition-colors">Hora</label>
