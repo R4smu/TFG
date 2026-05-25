@@ -43,7 +43,6 @@ export default function Cartelera() {
           En Cartelera
         </h1>
         
-        {/* Usamos el componente Carrusel con los datos de la DB */}
         <MovieCarousel 
           peliculas={peliculas} 
           onVerDetalles={setPeliculaSeleccionada}

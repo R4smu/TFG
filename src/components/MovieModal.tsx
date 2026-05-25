@@ -17,6 +17,7 @@ interface Exhibicion {
   horainicio: string;
   idsala: number;
   preciobase: number;
+  descuento_porcentaje: number;
   sala: { nombresala: string };
 }
 
@@ -43,13 +44,17 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
   const [asientosSeleccionados, setAsientosSeleccionados] = useState<number[]>([])
   const [procesandoCompra, setProcesandoCompra] = useState(false)
 
+  const calcularPrecioFinal = (precioBase: number, descuento: number) => {
+    return precioBase - (precioBase * (descuento / 100));
+  }
+
   const cargarHorarios = async () => {
     setCargandoSesiones(true)
     setVistaModal('horarios')
     
     const { data } = await supabase
       .from('exhibicion')
-      .select(`idexhibicion, fecha, horainicio, preciobase, idsala, sala ( nombresala )`)
+      .select(`idexhibicion, fecha, horainicio, preciobase, descuento_porcentaje, idsala, sala ( nombresala )`)
       .eq('idpelicula', pelicula.idpelicula)
       .order('fecha', { ascending: true })
       .order('horainicio', { ascending: true })
@@ -89,12 +94,14 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
     const { data: datosUsuario } = await supabase.from('usuario').select('idusuario').eq('email', user.email).single()
     if (!datosUsuario) return
 
+    const precioUnidadCobrado = calcularPrecioFinal(exhibicionSeleccionada.preciobase, exhibicionSeleccionada.descuento_porcentaje)
+
     const entradasAInsertar = asientosSeleccionados.map(idasiento => ({
       idexhibicion: exhibicionSeleccionada.idexhibicion,
       idusuario: datosUsuario.idusuario,
       idasiento: idasiento,
       fechacompra: new Date().toISOString(),
-      preciofinal: exhibicionSeleccionada.preciobase,
+      preciofinal: parseFloat(precioUnidadCobrado.toFixed(2)),
       estado: 'Confirmada',
       tipocompra: 'Online',
       comprobanteurl: `/ticket/${crypto.randomUUID()}`
@@ -109,24 +116,27 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
 
   const filasDeAsientos = Array.from(new Set(asientos.map(a => a.fila))).sort((a, b) => a - b)
 
+  const precioUnidadReal = exhibicionSeleccionada ? calcularPrecioFinal(exhibicionSeleccionada.preciobase, exhibicionSeleccionada.descuento_porcentaje) : 0;
+  const totalAPagar = precioUnidadReal * asientosSeleccionados.length;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md transition-colors duration-300">
       <div className="bg-white dark:bg-gray-900 w-full max-w-5xl max-h-[90vh] rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col relative animate-fade-in text-gray-900 dark:text-white shadow-2xl transition-colors">
         
         {/* Botón Cerrar */}
-        <button onClick={onClose} className="absolute top-4 right-4 z-20 bg-gray-100 dark:bg-black/50 hover:bg-red-500 hover:text-white dark:hover:bg-red-600 rounded-full p-2 transition-colors">
+        <button onClick={onClose} className="absolute top-4 right-4 z-20 cursor-pointer bg-gray-100 dark:bg-black/50 hover:bg-red-500 hover:text-white dark:hover:bg-red-600 rounded-full p-2 transition-colors">
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
 
         <div className="overflow-y-auto">
-          {/* Header del Modal con efecto Glass */}
+          {/* Header del Modal */}
           <div className="relative h-[200px] w-full">
             <img src={pelicula.posterurl} className="w-full h-full object-cover opacity-30 dark:opacity-20 blur-md" alt="" />
             <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-gray-900 to-transparent"></div>
             <div className="absolute bottom-0 p-8">
               <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">{pelicula.titulo}</h1>
               {vistaModal !== 'info' && (
-                <button onClick={() => vistaModal === 'butacas' ? setVistaModal('horarios') : setVistaModal('info')} className="text-blue-600 dark:text-blue-400 text-sm font-bold mt-2 hover:underline transition-all">
+                <button onClick={() => vistaModal === 'butacas' ? setVistaModal('horarios') : setVistaModal('info')} className="cursor-pointer text-blue-600 dark:text-blue-400 text-sm font-bold mt-2 hover:underline transition-all">
                   ← Volver atrás
                 </button>
               )}
@@ -143,7 +153,7 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 h-fit transition-colors">
                   <h3 className="font-bold mb-4 text-gray-900 dark:text-white">¿Quieres verla?</h3>
-                  <button onClick={cargarHorarios} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold shadow-lg shadow-blue-600/20 transition-all active:scale-95">Comprar Entradas</button>
+                  <button onClick={cargarHorarios} className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold shadow-lg shadow-blue-600/20 transition-all active:scale-95">Comprar Entradas</button>
                 </div>
               </div>
             )}
@@ -155,13 +165,33 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
                   <p className="text-gray-500 dark:text-gray-400 animate-pulse">Buscando horarios...</p>
                 ) : exhibiciones.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {exhibiciones.map((ex) => (
-                      <button key={ex.idexhibicion} onClick={() => seleccionarExhibicion(ex)} className="bg-white dark:bg-gray-800 hover:border-blue-500 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 p-4 rounded-xl text-left transition-all shadow-sm">
-                        <div className="text-blue-600 dark:text-blue-400 font-bold text-lg">{ex.horainicio.substring(0, 5)} h</div>
-                        <div className="text-gray-900 dark:text-white text-sm font-medium">{new Date(ex.fecha).toLocaleDateString()}</div>
-                        <div className="text-gray-500 dark:text-gray-400 text-xs mt-2 uppercase">{ex.sala.nombresala} • <span className="text-green-600 dark:text-green-500 font-bold">{ex.preciobase}€</span></div>
-                      </button>
-                    ))}
+                    {exhibiciones.map((ex) => {
+                      const tieneDescuento = ex.descuento_porcentaje > 0;
+                      const precioFinal = calcularPrecioFinal(ex.preciobase, ex.descuento_porcentaje);
+
+                      return (
+                        <button key={ex.idexhibicion} onClick={() => seleccionarExhibicion(ex)} className="cursor-pointer bg-white dark:bg-gray-800 hover:border-blue-500 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 p-4 rounded-xl text-left transition-all shadow-sm">
+                          <div className="text-blue-600 dark:text-blue-400 font-bold text-lg">{ex.horainicio.substring(0, 5)} h</div>
+                          <div className="text-gray-900 dark:text-white text-sm font-medium">{new Date(ex.fecha).toLocaleDateString()}</div>
+                          
+                          <div className="text-gray-500 dark:text-gray-400 text-xs mt-2 uppercase flex items-center gap-1.5 flex-wrap">
+                            <span>{ex.sala.nombresala} •</span>
+                            
+                            {tieneDescuento ? (
+                              <span className="flex items-center gap-1.5">
+                                <span className="line-through opacity-60">{ex.preciobase}€</span>
+                                <span className="text-green-600 dark:text-green-500 font-bold">{precioFinal.toFixed(2)}€</span>
+                                <span className="bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                  -{ex.descuento_porcentaje}%
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-green-600 dark:text-green-500 font-bold">{ex.preciobase}€</span>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
                 ) : <p className="text-gray-500 dark:text-gray-400 italic">No hay sesiones programadas.</p>}
               </div>
@@ -187,7 +217,7 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
                                 onClick={() => toggleAsiento(asiento.idasiento)} 
                                 disabled={ocupado}
                                 title={`Fila ${asiento.fila}, Asiento ${asiento.numasiento}`}
-                                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-t-lg transition-all text-[10px] font-bold border-b-4 
+                                className={`cursor-pointer w-7 h-7 sm:w-8 sm:h-8 rounded-t-lg transition-all text-[10px] font-bold border-b-4 
                                   ${ocupado 
                                     ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-600 cursor-not-allowed border-gray-300 dark:border-gray-900' 
                                     : seleccionado 
@@ -217,14 +247,35 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
                     <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-2">Resumen de compra</h3>
                     <div className="space-y-2 mb-6">
                       <p className="text-sm text-gray-500 dark:text-gray-400">Asientos: <span className="text-gray-900 dark:text-white font-bold">{asientosSeleccionados.length}</span></p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Precio unidad: <span className="text-gray-900 dark:text-white font-bold">{exhibicionSeleccionada.preciobase}€</span></p>
+                      
+                      {exhibicionSeleccionada.descuento_porcentaje > 0 ? (
+                        <>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                            <span>Precio original:</span> 
+                            <span className="line-through">{exhibicionSeleccionada.preciobase.toFixed(2)}€</span>
+                          </p>
+                          <p className="text-sm text-green-600 dark:text-green-400 flex items-center justify-between font-bold">
+                            <span>Precio oferta (-{exhibicionSeleccionada.descuento_porcentaje}%):</span> 
+                            <span>{precioUnidadReal.toFixed(2)}€</span>
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                          <span>Precio unidad:</span> 
+                          <span className="text-gray-900 dark:text-white font-bold">{precioUnidadReal.toFixed(2)}€</span>
+                        </p>
+                      )}
                     </div>
+                    
                     <p className="text-xs text-gray-400 uppercase font-black">Total a pagar:</p>
-                    <p className="text-3xl font-black text-green-600 dark:text-green-500 mb-6 transition-colors">{(asientosSeleccionados.length * exhibicionSeleccionada.preciobase).toFixed(2)}€</p>
+                    <p className="text-3xl font-black text-green-600 dark:text-green-500 mb-6 transition-colors">
+                      {totalAPagar.toFixed(2)}€
+                    </p>
+                    
                     <button 
                       onClick={realizarCompra} 
                       disabled={asientosSeleccionados.length === 0 || procesandoCompra} 
-                      className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-lg 
+                      className={`cursor-pointer w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-lg 
                         ${asientosSeleccionados.length === 0 
                           ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none' 
                           : 'bg-green-600 hover:bg-green-700 text-white shadow-green-600/20'}`}
