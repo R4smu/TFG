@@ -172,7 +172,7 @@ export default function ConfiguracionUsuario() {
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Correo Electrónico (Solo lectura)</label>
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Correo Electrónico</label>
             <input 
               type="email" 
               value={email} 

@@ -13,6 +13,7 @@ function AppContent() {
   const [session, setSession] = useState<any>(null)
   const [esadmin, setEsAdmin] = useState(false)
   const [nombreUsuario, setNombreUsuario] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null) 
 
   const [modoOscuro, setModoOscuro] = useState(() => {
     const temaGuardado = localStorage.getItem('tema')
@@ -37,17 +38,19 @@ function AppContent() {
       if (currentSession?.user) {
         const { data } = await supabase
           .from('usuario')
-          .select('nombre, esadmin')
+          .select('nombre, esadmin, avatar_url') 
           .eq('email', currentSession.user.email)
           .maybeSingle()
         
         if (data) {
           setEsAdmin(data.esadmin || false)
           setNombreUsuario(data.nombre || '')
+          setAvatarUrl(data.avatar_url || null) 
         }
       } else {
         setEsAdmin(false)
         setNombreUsuario('')
+        setAvatarUrl(null)
       }
     }
 
@@ -73,6 +76,7 @@ function AppContent() {
       <Header 
         session={session} 
         nombreUsuario={nombreUsuario} 
+        avatarUrl={avatarUrl}
         onLogout={handleCerrarSesion} 
         modoOscuro={modoOscuro}
         onToggleTema={() => setModoOscuro(!modoOscuro)}
