@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { createClient } from '@supabase/supabase-js'
+
+const urlSupabase = import.meta.env.VITE_SUPABASE_URL
+const claveAnonSupabase = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseParaCrear = createClient(urlSupabase, claveAnonSupabase, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false
+  }
+})
 
 interface Usuario {
   idusuario: number;
@@ -20,8 +30,13 @@ export default function GestorUsuarios() {
 
   const cargarUsuarios = async () => {
     setCargando(true)
-    const { data } = await supabase.from('usuario').select('*').order('nombre', { ascending: true })
-    if (data) setUsuarios(data)
+    const { data, error } = await supabase.from('usuario').select('*').order('nombre', { ascending: true })
+    
+    if (error) {
+      console.error("Error al cargar usuarios:", error.message)
+    } else if (data) {
+      setUsuarios(data)
+    }
     setCargando(false)
   }
 
@@ -58,7 +73,7 @@ export default function GestorUsuarios() {
       else setModalAbierto(false)
 
     } else {
-      // --- MODO CREACIÓN ---
+      // --- MODO CREACIÓN NUEVA ---
       const password = usuarioSeleccionado.password || ''
       const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
       if (!passwordRegex.test(password)) {
@@ -67,7 +82,7 @@ export default function GestorUsuarios() {
         return
       }
 
-      const { data: authData, error: errorAuth } = await supabase.auth.signUp({
+      const { data: authData, error: errorAuth } = await supabaseParaCrear.auth.signUp({
         email: usuarioSeleccionado.email!,
         password: password,
         options: {
@@ -79,18 +94,22 @@ export default function GestorUsuarios() {
       })
 
       if (errorAuth) {
-        alert("Error en la autenticación: " + errorAuth.message)
+        alert("Error al registrar en Auth: " + errorAuth.message)
       } else if (authData.user) {
         const { error: dbError } = await supabase
           .from('usuario')
           .update({ 
-            esadmin: usuarioSeleccionado.esadmin,
+            esadmin: usuarioSeleccionado.esadmin === true || (usuarioSeleccionado.esadmin as any) === 'true',
             alta: usuarioSeleccionado.alta 
           })
           .eq('email', usuarioSeleccionado.email)
 
-        if (dbError) alert("Usuario creado en Auth pero hubo un problema con sus permisos: " + dbError.message)
-        else setModalAbierto(false)
+        if (dbError) {
+          alert("Usuario autenticado, pero hubo un error al ajustar sus permisos en la tabla pública: " + dbError.message)
+        } else {
+          alert("¡Usuario creado con éxito! Tu sesión de administrador sigue intacta.")
+          setModalAbierto(false)
+        }
       }
     }
 
@@ -113,7 +132,7 @@ export default function GestorUsuarios() {
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-md transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Control de Usuarios</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Control de Usuarios ({usuarios.length})</h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm">Gestiona los permisos de administrador y los estados de alta/baja.</p>
         </div>
         <button onClick={abrirModalCrear} className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold transition-colors flex items-center gap-2 shadow-sm">
@@ -165,7 +184,7 @@ export default function GestorUsuarios() {
         </table>
       </div>
 
-      {/* MODAL EDICIÓN Y CREACIÓN */}
+      {/* MODAL ADAPTADO */}
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 dark:bg-black/80 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl transition-colors">
