@@ -20,6 +20,18 @@ export default function Login() {
         const { error: errorAuth } = await supabase.auth.signInWithPassword({ email, password })
         if (errorAuth) throw new Error("Credenciales incorrectas. Inténtalo de nuevo.")
         
+        // --- COMPROBACIÓN DE ALTA/BAJA ---
+        const { data: dbUser } = await supabase
+          .from('usuario')
+          .select('alta')
+          .eq('email', email)
+          .single()
+
+        if (dbUser && dbUser.alta === false) {
+          await supabase.auth.signOut()
+          throw new Error("Esta cuenta ha sido desactivada y no tiene acceso al sistema.")
+        }
+        
         navigate('/')
       } else {
         // --- REGISTRO ---
