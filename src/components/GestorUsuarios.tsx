@@ -5,10 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 const urlSupabase = import.meta.env.VITE_SUPABASE_URL
 const claveAnonSupabase = import.meta.env.VITE_SUPABASE_ANON_KEY
 const supabaseParaCrear = createClient(urlSupabase, claveAnonSupabase, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false
-  }
+  auth: { persistSession: false, autoRefreshToken: false }
 })
 
 interface Usuario {
@@ -31,12 +28,8 @@ export default function GestorUsuarios() {
   const cargarUsuarios = async () => {
     setCargando(true)
     const { data, error } = await supabase.from('usuario').select('*').order('nombre', { ascending: true })
-    
-    if (error) {
-      console.error("Error al cargar usuarios:", error.message)
-    } else if (data) {
-      setUsuarios(data)
-    }
+    if (data) setUsuarios(data)
+    if (error) console.error("Error cargando usuarios:", error)
     setCargando(false)
   }
 
@@ -64,19 +57,23 @@ export default function GestorUsuarios() {
     e.preventDefault()
     setProcesando(true)
 
+    const esAdminFinal = usuarioSeleccionado.esadmin === true || String(usuarioSeleccionado.esadmin) === 'true';
+
     if (modoEdicion) {
       // --- MODO EDICIÓN ---
       const { idusuario, password, ...datosAActualizar } = usuarioSeleccionado as any
-      const { error } = await supabase.from('usuario').update(datosAActualizar).eq('idusuario', idusuario)
+      const { error } = await supabase
+        .from('usuario')
+        .update({ ...datosAActualizar, esadmin: esAdminFinal })
+        .eq('idusuario', idusuario)
       
       if (error) alert("Error al actualizar: " + error.message)
       else setModalAbierto(false)
 
     } else {
-      // --- MODO CREACIÓN NUEVA ---
+      // --- MODO CREACIÓN ---
       const password = usuarioSeleccionado.password || ''
-      const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
-      if (!passwordRegex.test(password)) {
+      if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/.test(password)) {
         alert("Error: La contraseña debe tener al menos 6 caracteres, 1 mayúscula, 1 número y 1 símbolo.")
         setProcesando(false)
         return
@@ -85,29 +82,26 @@ export default function GestorUsuarios() {
       const { data: authData, error: errorAuth } = await supabaseParaCrear.auth.signUp({
         email: usuarioSeleccionado.email!,
         password: password,
-        options: {
-          data: {
-            nombre: usuarioSeleccionado.nombre,
-            telefono: usuarioSeleccionado.telefono
-          }
-        }
+        options: { data: { nombre: usuarioSeleccionado.nombre, telefono: usuarioSeleccionado.telefono } }
       })
 
       if (errorAuth) {
-        alert("Error al registrar en Auth: " + errorAuth.message)
+        alert("Error al registrar: " + errorAuth.message)
       } else if (authData.user) {
-        const { error: dbError } = await supabase
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const { data: checkData, error: dbError } = await supabase
           .from('usuario')
-          .update({ 
-            esadmin: usuarioSeleccionado.esadmin === true || (usuarioSeleccionado.esadmin as any) === 'true',
-            alta: usuarioSeleccionado.alta 
-          })
+          .update({ esadmin: esAdminFinal, alta: usuarioSeleccionado.alta })
           .eq('email', usuarioSeleccionado.email)
+          .select()
 
         if (dbError) {
-          alert("Usuario autenticado, pero hubo un error al ajustar sus permisos en la tabla pública: " + dbError.message)
+          alert("Usuario creado, pero fallaron los permisos: " + dbError.message)
+        } else if (!checkData || checkData.length === 0) {
+          alert("El usuario se ha creado, pero tu base de datos ha bloqueado el cambio de rol. Comprueba que el RLS esté desactivado.")
         } else {
-          alert("¡Usuario creado con éxito! Tu sesión de administrador sigue intacta.")
           setModalAbierto(false)
         }
       }
@@ -184,7 +178,6 @@ export default function GestorUsuarios() {
         </table>
       </div>
 
-      {/* MODAL ADAPTADO */}
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 dark:bg-black/80 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl transition-colors">
