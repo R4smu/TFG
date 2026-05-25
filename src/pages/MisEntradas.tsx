@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useNavigate, Link } from 'react-router-dom'
 
@@ -20,6 +20,8 @@ interface Entrada {
 export default function MisEntradas() {
   const [entradas, setEntradas] = useState<Entrada[]>([])
   const [cargando, setCargando] = useState(true)
+    const [criterioOrden, setCriterioOrden] = useState('compra_desc')
+  
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export default function MisEntradas() {
             exhibicion ( fecha, horainicio, pelicula ( titulo, posterurl ) )
           `)
           .eq('idusuario', userData.idusuario)
-          .order('fechacompra', { ascending: false })
+          .order('fechacompra', { ascending: false }) 
 
         if (entradasData) {
           setEntradas(entradasData as unknown as Entrada[])
@@ -53,45 +55,107 @@ export default function MisEntradas() {
     cargarEntradas()
   }, [navigate])
 
+  // --- ORDENACIÓN EN TIEMPO REAL ---
+  const entradasOrdenadas = useMemo(() => {
+    const copia = [...entradas];
+
+    return copia.sort((a, b) => {
+      const peliA = Array.isArray(a.exhibicion.pelicula) ? a.exhibicion.pelicula[0] : a.exhibicion.pelicula;
+      const peliB = Array.isArray(b.exhibicion.pelicula) ? b.exhibicion.pelicula[0] : b.exhibicion.pelicula;
+      
+      const fechaCompraA = new Date(a.fechacompra).getTime();
+      const fechaCompraB = new Date(b.fechacompra).getTime();
+      
+      const sesionA = new Date(`${a.exhibicion.fecha}T${a.exhibicion.horainicio}`).getTime();
+      const sesionB = new Date(`${b.exhibicion.fecha}T${b.exhibicion.horainicio}`).getTime();
+
+      switch (criterioOrden) {
+        case 'compra_desc':
+          return fechaCompraB - fechaCompraA;
+        case 'compra_asc':
+          return fechaCompraA - fechaCompraB;
+        case 'sesion_desc':
+          return sesionB - sesionA;
+        case 'sesion_asc':
+          return sesionA - sesionB;
+        case 'nombre_asc':
+          return peliA.titulo.localeCompare(peliB.titulo);
+        case 'nombre_desc':
+          return peliB.titulo.localeCompare(peliA.titulo);
+        default:
+          return 0;
+      }
+    });
+  }, [entradas, criterioOrden]);
+
   if (cargando) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white flex justify-center items-center transition-colors">Buscando tus entradas...</div>
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         
-        <div className="flex items-center gap-4 mb-8">
-          <Link to="/perfil" className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 p-2 rounded-full transition-colors">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white transition-colors">Mis Entradas</h1>
+        {/* --- CABECERA CON EL SELECTOR DE FILTRO --- */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <Link to="/perfil" className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 p-2 rounded-full transition-colors cursor-pointer">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            </Link>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white transition-colors">Mis Entradas</h1>
+          </div>
+
+          {entradas.length > 0 && (
+            <div className="flex items-center gap-3 bg-white dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
+              <label htmlFor="ordenar" className="text-sm font-medium text-gray-600 dark:text-gray-300 ml-2">
+                Ordenar por:
+              </label>
+              <select
+                id="ordenar"
+                value={criterioOrden}
+                onChange={(e) => setCriterioOrden(e.target.value)}
+                className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer transition-colors outline-none"
+              >
+                <optgroup label="Fecha de Compra">
+                  <option value="compra_desc">Compra: Más recientes</option>
+                  <option value="compra_asc">Compra: Más antiguas</option>
+                </optgroup>
+                <optgroup label="Fecha de Exhibición">
+                  <option value="sesion_desc">Sesión: Más futuras</option>
+                  <option value="sesion_asc">Sesión: Más pasadas</option>
+                </optgroup>
+                <optgroup label="Nombre de Película">
+                  <option value="nombre_asc">Título: A - Z</option>
+                  <option value="nombre_desc">Título: Z - A</option>
+                </optgroup>
+              </select>
+            </div>
+          )}
         </div>
 
-        {entradas.length === 0 ? (
+        {/* --- LISTADO DE ENTRADAS ORDENADAS --- */}
+        {entradasOrdenadas.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-200 dark:border-gray-700 shadow-md transition-colors">
             <div className="bg-gray-100 dark:bg-gray-900 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 transition-colors">
               <svg className="w-12 h-12 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 transition-colors">Aún no tienes entradas</h2>
             <p className="text-gray-500 dark:text-gray-400 mb-8 transition-colors">Parece que todavía no has comprado ninguna entrada para nuestras películas.</p>
-            <Link to="/" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-colors">
+            <Link to="/" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-colors cursor-pointer">
               Ir a la Cartelera
             </Link>
           </div>
         ) : (
           <div className="space-y-4">
-            {entradas.map((entrada) => {
+            {entradasOrdenadas.map((entrada) => {
               const peli = Array.isArray(entrada.exhibicion.pelicula) ? entrada.exhibicion.pelicula[0] : entrada.exhibicion.pelicula;
               const idUrlTicket = entrada.comprobanteurl.split('/').pop() || entrada.identrada;
 
               return (
-                <div key={entrada.identrada} className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row">
+                <div key={entrada.identrada} className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row animate-fade-in">
                   
-                  {/* Mini-póster */}
                   <div className="w-full sm:w-32 h-40 sm:h-auto bg-gray-200 dark:bg-gray-900 shrink-0 transition-colors">
                     <img src={peli.posterurl} alt={peli.titulo} className="w-full h-full object-cover" />
                   </div>
                   
-                  {/* Detalles de la entrada */}
                   <div className="p-6 flex-1 flex flex-col justify-center">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-xl font-bold text-gray-900 dark:text-white transition-colors">{peli.titulo}</h3>
@@ -116,11 +180,10 @@ export default function MisEntradas() {
                     </div>
                   </div>
 
-                  {/* Botón de acceso al Ticket */}
                   <div className="p-6 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center border-t sm:border-t-0 sm:border-l border-gray-200 dark:border-gray-700 transition-colors">
                     <Link 
                       to={`/ticket/${idUrlTicket}`}
-                      className="w-full sm:w-auto text-center bg-gray-900 text-white hover:bg-gray-700 dark:bg-blue-600/20 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white px-6 py-3 rounded-lg font-bold transition-colors"
+                      className="cursor-pointer w-full sm:w-auto text-center bg-gray-900 text-white hover:bg-gray-700 dark:bg-blue-600/20 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white px-6 py-3 rounded-lg font-bold transition-colors"
                     >
                       Ver Ticket
                     </Link>
