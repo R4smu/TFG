@@ -14,7 +14,8 @@ export default function GestorUsuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [cargando, setCargando] = useState(true)
   const [modalAbierto, setModalAbierto] = useState(false)
-  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Partial<Usuario>>({})
+  const [modoEdicion, setModoEdicion] = useState(false)
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Partial<Usuario> & { password?: string }>({})
   const [procesando, setProcesando] = useState(false)
 
   const cargarUsuarios = async () => {
@@ -28,46 +29,80 @@ export default function GestorUsuarios() {
     cargarUsuarios()
   }, [])
 
+  const abrirModalCrear = () => {
+    setUsuarioSeleccionado({ nombre: '', email: '', telefono: '', esadmin: false, alta: true, password: '' })
+    setModoEdicion(false)
+    setModalAbierto(true)
+  }
+
   const abrirModalEditar = (u: Usuario) => {
     setUsuarioSeleccionado(u)
+    setModoEdicion(true)
     setModalAbierto(true)
   }
 
   const manejarCambioInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value
-    setUsuarioSeleccionado({ ...usuarioSeleccionado, [e.target.name]: value })
+    setUsuarioSeleccionado({ ...usuarioSeleccionado, [e.target.name]: e.target.value })
   }
 
   const guardarUsuario = async (e: React.FormEvent) => {
     e.preventDefault()
     setProcesando(true)
 
-    const { idusuario, ...datosAActualizar } = usuarioSeleccionado as Usuario
+    if (modoEdicion) {
+      // --- MODO EDICIÓN ---
+      const { idusuario, password, ...datosAActualizar } = usuarioSeleccionado as any
+      const { error } = await supabase.from('usuario').update(datosAActualizar).eq('idusuario', idusuario)
+      
+      if (error) alert("Error al actualizar: " + error.message)
+      else setModalAbierto(false)
 
-    const { error } = await supabase
-      .from('usuario')
-      .update(datosAActualizar)
-      .eq('idusuario', idusuario)
-
-    if (error) {
-      alert("Error al actualizar: " + error.message)
     } else {
-      setModalAbierto(false)
-      cargarUsuarios()
+      // --- MODO CREACIÓN ---
+      const password = usuarioSeleccionado.password || ''
+      const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
+      if (!passwordRegex.test(password)) {
+        alert("Error: La contraseña debe tener al menos 6 caracteres, 1 mayúscula, 1 número y 1 símbolo.")
+        setProcesando(false)
+        return
+      }
+
+      const { data: authData, error: errorAuth } = await supabase.auth.signUp({
+        email: usuarioSeleccionado.email!,
+        password: password,
+        options: {
+          data: {
+            nombre: usuarioSeleccionado.nombre,
+            telefono: usuarioSeleccionado.telefono
+          }
+        }
+      })
+
+      if (errorAuth) {
+        alert("Error en la autenticación: " + errorAuth.message)
+      } else if (authData.user) {
+        const { error: dbError } = await supabase
+          .from('usuario')
+          .update({ 
+            esadmin: usuarioSeleccionado.esadmin,
+            alta: usuarioSeleccionado.alta 
+          })
+          .eq('email', usuarioSeleccionado.email)
+
+        if (dbError) alert("Usuario creado en Auth pero hubo un problema con sus permisos: " + dbError.message)
+        else setModalAbierto(false)
+      }
     }
+
     setProcesando(false)
+    cargarUsuarios()
   }
 
-  // Función rápida para dar de alta o baja desde la tabla
   const alternarAltaBaja = async (u: Usuario) => {
     const palabra = u.alta ? 'dar de BAJA' : 'dar de ALTA'
     if (!window.confirm(`¿Estás seguro de que quieres ${palabra} al usuario ${u.nombre}?`)) return
 
-    const { error } = await supabase
-      .from('usuario')
-      .update({ alta: !u.alta })
-      .eq('idusuario', u.idusuario)
-
+    const { error } = await supabase.from('usuario').update({ alta: !u.alta }).eq('idusuario', u.idusuario)
     if (error) alert("Error: " + error.message)
     else cargarUsuarios()
   }
@@ -76,9 +111,14 @@ export default function GestorUsuarios() {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-md transition-colors duration-300">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Control de Usuarios</h2>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">Gestiona los permisos de administrador y los estados de alta/baja.</p>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Control de Usuarios</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Gestiona los permisos de administrador y los estados de alta/baja.</p>
+        </div>
+        <button onClick={abrirModalCrear} className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold transition-colors flex items-center gap-2 shadow-sm">
+          <span>+</span> Nuevo Usuario
+        </button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
@@ -125,12 +165,14 @@ export default function GestorUsuarios() {
         </table>
       </div>
 
-      {/* MODAL EDICIÓN DE USUARIO */}
+      {/* MODAL EDICIÓN Y CREACIÓN */}
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 dark:bg-black/80 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl transition-colors">
             <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 z-10 rounded-t-2xl">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Editar Usuario</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                {modoEdicion ? 'Editar Usuario' : 'Nuevo Usuario'}
+              </h3>
               <button onClick={() => setModalAbierto(false)} className="cursor-pointer text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 w-8 h-8 rounded-full flex items-center justify-center">✕</button>
             </div>
             
@@ -139,12 +181,24 @@ export default function GestorUsuarios() {
                 <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Nombre Completo</label>
                 <input required name="nombre" value={usuarioSeleccionado.nombre || ''} onChange={manejarCambioInput} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500" />
               </div>
+              
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Correo Electrónico</label>
+                <input required type="email" name="email" disabled={modoEdicion} value={usuarioSeleccionado.email || ''} onChange={manejarCambioInput} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+              </div>
+
               <div>
                 <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Teléfono</label>
                 <input name="telefono" value={usuarioSeleccionado.telefono || ''} onChange={manejarCambioInput} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500" />
               </div>
+
+              {!modoEdicion && (
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Contraseña Temporal</label>
+                  <input required type="password" name="password" value={usuarioSeleccionado.password || ''} onChange={manejarCambioInput} placeholder="••••••••" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500" />
+                </div>
+              )}
               
-              {/* Select para cambiar el rol */}
               <div>
                 <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Rol en el sistema</label>
                 <select name="esadmin" value={usuarioSeleccionado.esadmin ? 'true' : 'false'} onChange={(e) => setUsuarioSeleccionado({...usuarioSeleccionado, esadmin: e.target.value === 'true'})} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
@@ -156,7 +210,7 @@ export default function GestorUsuarios() {
               <div className="flex justify-end gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
                 <button type="button" onClick={() => setModalAbierto(false)} className="cursor-pointer px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium">Cancelar</button>
                 <button type="submit" disabled={procesando} className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow-md disabled:opacity-50">
-                  {procesando ? 'Guardando...' : 'Guardar Cambios'}
+                  {procesando ? 'Guardando...' : (modoEdicion ? 'Guardar Cambios' : 'Crear Usuario')}
                 </button>
               </div>
             </form>
