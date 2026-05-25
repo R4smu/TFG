@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useNavigate, Link } from 'react-router-dom'
 import GestorPeliculas from '../components/GestorPeliculas'
 import GestorUsuarios from '../components/GestorUsuarios'
+import ConfiguracionUsuario from '../components/ConfiguracionUsuario'
 
 interface PerfilProps {
   esadmin: boolean;
@@ -11,6 +12,7 @@ interface PerfilProps {
 export default function Perfil({ esadmin }: PerfilProps) {
   const [usuario, setUsuario] = useState<any>(null)
   const [cargando, setCargando] = useState(true)
+  const [mostrarAjustes, setMostrarAjustes] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -39,9 +41,16 @@ export default function Perfil({ esadmin }: PerfilProps) {
           <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="flex items-center gap-6 z-10">
-            <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-blue-900/20">
-              {usuario.nombre.charAt(0).toUpperCase()}
-            </div>
+            {usuario.avatar_url ? (
+              <div className="w-20 h-20 rounded-full overflow-hidden shadow-lg shadow-blue-900/20 border-4 border-white dark:border-gray-800">
+                <img src={usuario.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-blue-900/20">
+                {usuario.nombre.charAt(0).toUpperCase()}
+              </div>
+            )}
+            
             <div>
               <h2 className="text-2xl font-bold flex items-center gap-3">
                 {usuario.nombre}
@@ -74,32 +83,41 @@ export default function Perfil({ esadmin }: PerfilProps) {
               <svg className="w-6 h-6 text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:translate-x-2 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </Link>
 
-            <button className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 p-6 rounded-xl flex items-center justify-between group transition-all shadow-md text-left">
+            {/* BOTÓN MODIFICADO PARA ABRIR/CERRAR AJUSTES */}
+            <button 
+              onClick={() => setMostrarAjustes(!mostrarAjustes)}
+              className={`bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 p-6 rounded-xl flex items-center justify-between group transition-all shadow-md text-left ${mostrarAjustes ? 'ring-2 ring-blue-500 border-transparent' : ''}`}
+            >
               <div className="flex items-center gap-5">
-                <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-xl text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                <div className={`p-4 rounded-xl transition-colors ${mostrarAjustes ? 'bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-500' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white'}`}>
                   <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Ajustes de cuenta</h3>
+                  <h3 className={`text-xl font-bold transition-colors ${mostrarAjustes ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white'}`}>Ajustes de cuenta</h3>
                   <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Modifica tus datos personales</p>
                 </div>
               </div>
+              <svg className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${mostrarAjustes ? 'rotate-90 text-blue-500' : 'group-hover:translate-x-2'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>
         </div>
 
-        {/* Zona de administración */}
+        {/* CONTENEDOR DESPLEGABLE DE CONFIGURACIÓN */}
+        {mostrarAjustes && (
+          <div className="animate-fade-in mt-8">
+            <ConfiguracionUsuario />
+          </div>
+        )}
+
+        {/* ZONA DE ADMINISTRACIÓN */}
         {esadmin && (
-          <div className="mt-12 animate-fade-in border-t border-gray-200 dark:border-gray-800 pt-8 transition-colors space-y-12">
+          <div className="mt-12 border-t border-gray-200 dark:border-gray-800 pt-8 transition-colors space-y-12">
             <h3 className="text-xl font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider text-sm flex items-center gap-2">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
               Zona de Administración
             </h3>
             
-            {/* Panel de Películas */}
             <GestorPeliculas />
-            
-            {/* Panel de Usuarios */}
             <GestorUsuarios />
           </div>
         )}
