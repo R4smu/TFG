@@ -76,7 +76,8 @@ function AppContent() {
       <Header 
         session={session} 
         nombreUsuario={nombreUsuario} 
-        avatarUrl={avatarUrl}
+        avatarUrl={avatarUrl} 
+        esadmin={esadmin}
         onLogout={handleCerrarSesion} 
         modoOscuro={modoOscuro}
         onToggleTema={() => setModoOscuro(!modoOscuro)}
