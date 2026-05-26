@@ -3,8 +3,9 @@ import { supabase } from '../lib/supabaseClient'
 import { useNavigate, Link } from 'react-router-dom'
 import GestorPeliculas from '../components/GestorPeliculas'
 import GestorUsuarios from '../components/GestorUsuarios'
-import ConfiguracionUsuario from '../components/ConfiguracionUsuario'
 import GestorSalas from '../components/GestorSalas'
+import ConfiguracionUsuario from '../components/ConfiguracionUsuario'
+import DashboardAdmin from '../components/DashboardAdmin'
 
 interface PerfilProps {
   esadmin: boolean;
@@ -118,6 +119,7 @@ export default function Perfil({ esadmin }: PerfilProps) {
               Zona de Administración
             </h3>
             
+            <DashboardAdmin />
             <GestorPeliculas />
             <GestorSalas />
             <GestorUsuarios />
