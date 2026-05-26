@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import GestorPeliculas from '../components/GestorPeliculas'
 import GestorUsuarios from '../components/GestorUsuarios'
 import ConfiguracionUsuario from '../components/ConfiguracionUsuario'
+import GestorSalas from '../components/GestorSalas'
 
 interface PerfilProps {
   esadmin: boolean;
@@ -118,6 +119,7 @@ export default function Perfil({ esadmin }: PerfilProps) {
             </h3>
             
             <GestorPeliculas />
+            <GestorSalas />
             <GestorUsuarios />
           </div>
         )}
