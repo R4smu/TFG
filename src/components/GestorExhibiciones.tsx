@@ -44,7 +44,9 @@ export default function GestorExhibiciones({ pelicula, onClose }: GestorExhibici
 
   const cargarDatos = async () => {
     setCargando(true)
-    const { data: dataSalas } = await supabase.from('sala').select('*').order('idsala')
+    
+    const { data: dataSalas } = await supabase.from('sala').select('*').eq('activa', true).order('idsala')
+    
     if (dataSalas) {
       setSalas(dataSalas)
       if (dataSalas.length > 0 && !formData.idsala) {
