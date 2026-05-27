@@ -63,28 +63,44 @@ export default function MisEntradas() {
           </div>
         ) : (
           <>
+            {/* GRID DE ENTRADAS PAGINADO */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {entradasPaginadas.map(entrada => {
                 const peli = Array.isArray(entrada.exhibicion.pelicula) ? entrada.exhibicion.pelicula[0] : entrada.exhibicion.pelicula;
-                const esActiva = entrada.estado === 'Activa' || entrada.estado === 'Comprada';
+                
+                const fechaExhibicion = new Date(`${entrada.exhibicion.fecha}T${entrada.exhibicion.horainicio}`);
+                const fechaCaducidad = new Date(fechaExhibicion.getTime() + (3 * 60 * 60 * 1000)); // Sumamos 3 horas
+                const ahora = new Date();
+                
+                const haCaducado = ahora > fechaCaducidad;
+                
+                const esActiva = !haCaducado && (entrada.estado === 'Activa' || entrada.estado === 'Comprada');
 
                 return (
                   <Link 
                     to={`/ticket/${entrada.identrada}`} 
                     key={entrada.identrada}
-                    className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-xl hover:border-blue-500 dark:hover:border-blue-500 transition-all flex h-40"
+                    className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-xl hover:border-blue-500 dark:hover:border-blue-500 transition-all flex h-40 relative"
                   >
                     {/* Póster */}
                     <div className="w-28 shrink-0 relative overflow-hidden">
                       <img src={peli.posterurl} alt="Poster" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      {!esActiva && <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm"><span className="text-white text-xs font-bold uppercase tracking-widest rotate-[-45deg] bg-red-600 px-3 py-1">Usada</span></div>}
+                      
+                      {/* Sello de Caducidad */}
+                      {!esActiva && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-10">
+                          <span className="text-white text-[10px] sm:text-xs font-bold uppercase tracking-widest rotate-[-45deg] bg-red-600 px-3 py-1 whitespace-nowrap shadow-md">
+                            {haCaducado ? 'Finalizada' : 'Cancelada'}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Info */}
-                    <div className="p-4 flex flex-col justify-between flex-1 min-w-0">
+                    <div className={`p-4 flex flex-col justify-between flex-1 min-w-0 ${!esActiva ? 'opacity-60' : ''}`}>
                       <div>
                         <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded inline-block mb-1.5 ${esActiva ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
-                          {entrada.estado}
+                          {haCaducado ? 'Historial' : entrada.estado}
                         </span>
                         <h3 className="font-bold text-gray-900 dark:text-white truncate text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{peli.titulo}</h3>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -102,6 +118,7 @@ export default function MisEntradas() {
               })}
             </div>
 
+            {/* BOTONERA DE PAGINACIÓN */}
             {totalPaginas > 1 && (
               <div className="flex items-center justify-center gap-2 mt-10 pt-6 border-t border-gray-200 dark:border-gray-800">
                 <button 
