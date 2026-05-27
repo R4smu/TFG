@@ -13,6 +13,7 @@ export default function ConfiguracionUsuario() {
   
   const [archivoImagen, setArchivoImagen] = useState<File | null>(null)
   const [previewImagen, setPreviewImagen] = useState<string | null>(null)
+  const [estaArrastrando, setEstaArrastrando] = useState(false)
   const inputArchivoRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -40,18 +41,26 @@ export default function ConfiguracionUsuario() {
     setCargando(false)
   }
 
-  const manejarSeleccionImagen = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return
-    
-    const archivo = e.target.files[0]
+  const procesarArchivo = (archivo: File) => {
     if (archivo.size > 2 * 1024 * 1024) {
       setMensaje({ tipo: 'error', texto: 'La imagen es demasiado grande. Máximo 2MB.' })
       return
     }
-
     setArchivoImagen(archivo)
     setPreviewImagen(URL.createObjectURL(archivo))
     setMensaje(null)
+  }
+
+  const manejarSeleccionImagen = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) procesarArchivo(e.target.files[0])
+  }
+
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setEstaArrastrando(true); }
+  const handleDragLeave = () => setEstaArrastrando(false)
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setEstaArrastrando(false)
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) procesarArchivo(e.dataTransfer.files[0])
   }
 
   const guardarCambios = async (e: React.FormEvent) => {
@@ -67,7 +76,7 @@ export default function ConfiguracionUsuario() {
         if (!user) throw new Error("No hay sesión activa")
 
         const extension = archivoImagen.name.split('.').pop()
-        const nombreArchivo = `${user.id}-${Math.random()}.${extension}`
+        const nombreArchivo = `${user.id}-${Date.now()}.${extension}`
         
         const { error: uploadError } = await supabase.storage
           .from('avatars')
@@ -84,11 +93,7 @@ export default function ConfiguracionUsuario() {
 
       const { error: dbError } = await supabase
         .from('usuario')
-        .update({
-          nombre,
-          telefono,
-          avatar_url: nuevaAvatarUrl
-        })
+        .update({ nombre, telefono, avatar_url: nuevaAvatarUrl })
         .eq('email', email)
 
       if (dbError) throw dbError
@@ -119,10 +124,16 @@ export default function ConfiguracionUsuario() {
 
       <form onSubmit={guardarCambios} className="space-y-6">
         
-        {/* ZONA DE FOTO DE PERFIL */}
+        {/* FOTO DE PERFIL */}
         <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="relative group cursor-pointer" onClick={() => inputArchivoRef.current?.click()}>
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 border-4 border-white dark:border-gray-800 shadow-lg relative">
+          <div 
+            className={`relative group cursor-pointer border-4 rounded-full transition-all ${estaArrastrando ? 'border-blue-500 scale-105' : 'border-white dark:border-gray-800'}`}
+            onClick={() => inputArchivoRef.current?.click()}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg relative">
               {previewImagen || avatarUrl ? (
                 <img src={previewImagen || avatarUrl!} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
@@ -131,23 +142,15 @@ export default function ConfiguracionUsuario() {
                 </div>
               )}
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span className="text-white text-[10px] font-bold uppercase">Arrastrar</span>
               </div>
             </div>
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              ref={inputArchivoRef} 
-              onChange={manejarSeleccionImagen} 
-            />
+            <input type="file" accept="image/*" className="hidden" ref={inputArchivoRef} onChange={manejarSeleccionImagen} />
           </div>
+          
           <div className="text-center sm:text-left">
             <h3 className="text-gray-900 dark:text-white font-bold">Foto de perfil</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Recomendado: JPG, PNG o GIF. Tamaño máximo 2MB.</p>
-            <button type="button" onClick={() => inputArchivoRef.current?.click()} className="mt-3 text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 cursor-pointer">
-              Cambiar imagen
-            </button>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Arrastra tu foto aquí o haz clic para subir.</p>
           </div>
         </div>
 
@@ -155,39 +158,20 @@ export default function ConfiguracionUsuario() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Nombre Completo</label>
-            <input 
-              type="text" 
-              value={nombre} 
-              onChange={(e) => setNombre(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
-            />
+            <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors" />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Teléfono</label>
-            <input 
-              type="tel" 
-              value={telefono} 
-              onChange={(e) => setTelefono(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
-            />
+            <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors" />
           </div>
           <div className="md:col-span-2">
             <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Correo Electrónico</label>
-            <input 
-              type="email" 
-              value={email} 
-              disabled
-              className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-500 rounded-lg p-3 cursor-not-allowed transition-colors opacity-70"
-            />
+            <input type="email" value={email} disabled className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-500 rounded-lg p-3 cursor-not-allowed transition-colors opacity-70" />
           </div>
         </div>
 
         <div className="pt-4 flex justify-end">
-          <button 
-            type="submit" 
-            disabled={guardando} 
-            className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-colors disabled:opacity-50"
-          >
+          <button type="submit" disabled={guardando} className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-colors disabled:opacity-50">
             {guardando ? 'Guardando...' : 'Guardar Cambios'}
           </button>
         </div>
