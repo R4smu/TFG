@@ -69,12 +69,15 @@ export default function MisEntradas() {
                 const peli = Array.isArray(entrada.exhibicion.pelicula) ? entrada.exhibicion.pelicula[0] : entrada.exhibicion.pelicula;
                 
                 const fechaExhibicion = new Date(`${entrada.exhibicion.fecha}T${entrada.exhibicion.horainicio}`);
-                const fechaCaducidad = new Date(fechaExhibicion.getTime() + (3 * 60 * 60 * 1000)); // Sumamos 3 horas
+                const fechaCaducidad = new Date(fechaExhibicion.getTime() + (3 * 60 * 60 * 1000));
                 const ahora = new Date();
                 
                 const haCaducado = ahora > fechaCaducidad;
                 
-                const esActiva = !haCaducado && (entrada.estado === 'Activa' || entrada.estado === 'Comprada');
+                const estadoLimpio = String(entrada.estado || '').toLowerCase().trim();
+                const esCanceladaDB = estadoLimpio === 'cancelada';
+
+                const esActiva = !haCaducado && !esCanceladaDB;
 
                 return (
                   <Link 
@@ -86,21 +89,27 @@ export default function MisEntradas() {
                     <div className="w-28 shrink-0 relative overflow-hidden">
                       <img src={peli.posterurl} alt="Poster" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       
-                      {/* Sello de Caducidad */}
+                      {/* Sello de Estado */}
                       {!esActiva && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-10">
                           <span className="text-white text-[10px] sm:text-xs font-bold uppercase tracking-widest rotate-[-45deg] bg-red-600 px-3 py-1 whitespace-nowrap shadow-md">
-                            {haCaducado ? 'Finalizada' : 'Cancelada'}
+                            {esCanceladaDB ? 'Cancelada' : 'Finalizada'}
                           </span>
                         </div>
                       )}
                     </div>
 
-                    {/* Info */}
+                    {/* Contenido de la Tarjeta */}
                     <div className={`p-4 flex flex-col justify-between flex-1 min-w-0 ${!esActiva ? 'opacity-60' : ''}`}>
                       <div>
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded inline-block mb-1.5 ${esActiva ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
-                          {haCaducado ? 'Historial' : entrada.estado}
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded inline-block mb-1.5 ${
+                          esActiva 
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                            : esCanceladaDB 
+                              ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                              : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                        }`}>
+                          {esActiva ? (entrada.estado || 'Activa') : haCaducado ? 'Historial' : entrada.estado}
                         </span>
                         <h3 className="font-bold text-gray-900 dark:text-white truncate text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{peli.titulo}</h3>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -120,7 +129,7 @@ export default function MisEntradas() {
 
             {/* BOTONERA DE PAGINACIÓN */}
             {totalPaginas > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-10 pt-6 border-t border-gray-200 dark:border-gray-800">
+              <div className="flex items-center justify-center gap-2 mt-10 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <button 
                   onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
                   disabled={paginaActual === 1}
