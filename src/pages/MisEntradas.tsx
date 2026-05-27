@@ -1,198 +1,143 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { useNavigate, Link } from 'react-router-dom'
-
-interface Entrada {
-  identrada: number;
-  fechacompra: string;
-  estado: string;
-  comprobanteurl: string;
-  exhibicion: {
-    fecha: string;
-    horainicio: string;
-    pelicula: {
-      titulo: string;
-      posterurl: string;
-    }
-  }
-}
+import { Link } from 'react-router-dom'
 
 export default function MisEntradas() {
-  const [entradas, setEntradas] = useState<Entrada[]>([])
+  const [entradas, setEntradas] = useState<any[]>([])
   const [cargando, setCargando] = useState(true)
-    const [criterioOrden, setCriterioOrden] = useState('compra_desc')
-  
-  const navigate = useNavigate()
+
+  const [paginaActual, setPaginaActual] = useState(1)
+  const itemsPorPagina = 6
 
   useEffect(() => {
-    const cargarEntradas = async () => {
+    const cargarMisEntradas = async () => {
+      setCargando(true)
       const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        navigate('/login')
-        return
-      }
+      if (!user) return
 
       const { data: userData } = await supabase.from('usuario').select('idusuario').eq('email', user.email).single()
+      if (!userData) return
 
-      if (userData) {
-        const { data: entradasData } = await supabase
-          .from('entrada')
-          .select(`
-            identrada, fechacompra, estado, comprobanteurl,
-            exhibicion ( fecha, horainicio, pelicula ( titulo, posterurl ) )
-          `)
-          .eq('idusuario', userData.idusuario)
-          .order('fechacompra', { ascending: false }) 
+      const { data, error } = await supabase
+        .from('entrada')
+        .select(`
+          identrada, fechacompra, estado, preciofinal,
+          exhibicion ( fecha, horainicio, pelicula ( titulo, posterurl ) )
+        `)
+        .eq('idusuario', userData.idusuario)
+        .order('fechacompra', { ascending: false })
 
-        if (entradasData) {
-          setEntradas(entradasData as unknown as Entrada[])
-        }
-      }
+      if (data) setEntradas(data)
+      if (error) console.error("Error cargando entradas:", error.message)
+      
       setCargando(false)
     }
 
-    cargarEntradas()
-  }, [navigate])
+    cargarMisEntradas()
+  }, [])
 
-  // --- ORDENACIÓN EN TIEMPO REAL ---
-  const entradasOrdenadas = useMemo(() => {
-    const copia = [...entradas];
+  const totalPaginas = Math.ceil(entradas.length / itemsPorPagina)
+  if (paginaActual > totalPaginas && totalPaginas > 0) setPaginaActual(totalPaginas)
 
-    return copia.sort((a, b) => {
-      const peliA = Array.isArray(a.exhibicion.pelicula) ? a.exhibicion.pelicula[0] : a.exhibicion.pelicula;
-      const peliB = Array.isArray(b.exhibicion.pelicula) ? b.exhibicion.pelicula[0] : b.exhibicion.pelicula;
-      
-      const fechaCompraA = new Date(a.fechacompra).getTime();
-      const fechaCompraB = new Date(b.fechacompra).getTime();
-      
-      const sesionA = new Date(`${a.exhibicion.fecha}T${a.exhibicion.horainicio}`).getTime();
-      const sesionB = new Date(`${b.exhibicion.fecha}T${b.exhibicion.horainicio}`).getTime();
+  const indiceUltimoItem = paginaActual * itemsPorPagina
+  const indicePrimerItem = indiceUltimoItem - itemsPorPagina
+  const entradasPaginadas = entradas.slice(indicePrimerItem, indiceUltimoItem)
 
-      switch (criterioOrden) {
-        case 'compra_desc':
-          return fechaCompraB - fechaCompraA;
-        case 'compra_asc':
-          return fechaCompraA - fechaCompraB;
-        case 'sesion_desc':
-          return sesionB - sesionA;
-        case 'sesion_asc':
-          return sesionA - sesionB;
-        case 'nombre_asc':
-          return peliA.titulo.localeCompare(peliB.titulo);
-        case 'nombre_desc':
-          return peliB.titulo.localeCompare(peliA.titulo);
-        default:
-          return 0;
-      }
-    });
-  }, [entradas, criterioOrden]);
-
-  if (cargando) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white flex justify-center items-center transition-colors">Buscando tus entradas...</div>
+  if (cargando) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white flex justify-center items-center">Buscando tus entradas...</div>
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-8 transition-colors duration-300">
+      <div className="max-w-6xl mx-auto space-y-8">
         
-        {/* --- CABECERA CON EL SELECTOR DE FILTRO --- */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <Link to="/perfil" className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 p-2 rounded-full transition-colors cursor-pointer">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white transition-colors">Mis Entradas</h1>
-          </div>
-
-          {entradas.length > 0 && (
-            <div className="flex items-center gap-3 bg-white dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
-              <label htmlFor="ordenar" className="text-sm font-medium text-gray-600 dark:text-gray-300 ml-2">
-                Ordenar por:
-              </label>
-              <select
-                id="ordenar"
-                value={criterioOrden}
-                onChange={(e) => setCriterioOrden(e.target.value)}
-                className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer transition-colors outline-none"
-              >
-                <optgroup label="Fecha de Compra">
-                  <option value="compra_desc">Compra: Más recientes</option>
-                  <option value="compra_asc">Compra: Más antiguas</option>
-                </optgroup>
-                <optgroup label="Fecha de Exhibición">
-                  <option value="sesion_desc">Sesión: Más futuras</option>
-                  <option value="sesion_asc">Sesión: Más pasadas</option>
-                </optgroup>
-                <optgroup label="Nombre de Película">
-                  <option value="nombre_asc">Título: A - Z</option>
-                  <option value="nombre_desc">Título: Z - A</option>
-                </optgroup>
-              </select>
-            </div>
-          )}
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white tracking-tight">Mis Entradas</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">Aquí tienes el historial de todos tus tickets de cine.</p>
         </div>
 
-        {/* --- LISTADO DE ENTRADAS ORDENADAS --- */}
-        {entradasOrdenadas.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-200 dark:border-gray-700 shadow-md transition-colors">
-            <div className="bg-gray-100 dark:bg-gray-900 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 transition-colors">
-              <svg className="w-12 h-12 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 transition-colors">Aún no tienes entradas</h2>
-            <p className="text-gray-500 dark:text-gray-400 mb-8 transition-colors">Parece que todavía no has comprado ninguna entrada para nuestras películas.</p>
-            <Link to="/" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-colors cursor-pointer">
-              Ir a la Cartelera
-            </Link>
+        {entradas.length === 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center shadow-sm transition-colors">
+            <span className="text-5xl block mb-4">🎟️</span>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Aún no tienes entradas</h2>
+            <p className="text-gray-500 dark:text-gray-400 mt-2 mb-6">Parece que todavía no has comprado ningún ticket.</p>
+            <Link to="/" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold transition-colors">Ver Cartelera</Link>
           </div>
         ) : (
-          <div className="space-y-4">
-            {entradasOrdenadas.map((entrada) => {
-              const peli = Array.isArray(entrada.exhibicion.pelicula) ? entrada.exhibicion.pelicula[0] : entrada.exhibicion.pelicula;
-              const idUrlTicket = entrada.comprobanteurl.split('/').pop() || entrada.identrada;
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {entradasPaginadas.map(entrada => {
+                const peli = Array.isArray(entrada.exhibicion.pelicula) ? entrada.exhibicion.pelicula[0] : entrada.exhibicion.pelicula;
+                const esActiva = entrada.estado === 'Activa' || entrada.estado === 'Comprada';
 
-              return (
-                <div key={entrada.identrada} className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row animate-fade-in">
-                  
-                  <div className="w-full sm:w-32 h-40 sm:h-auto bg-gray-200 dark:bg-gray-900 shrink-0 transition-colors">
-                    <img src={peli.posterurl} alt={peli.titulo} className="w-full h-full object-cover" />
-                  </div>
-                  
-                  <div className="p-6 flex-1 flex flex-col justify-center">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white transition-colors">{peli.titulo}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${entrada.estado === 'Confirmada' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400'}`}>
-                        {entrada.estado}
-                      </span>
+                return (
+                  <Link 
+                    to={`/ticket/${entrada.identrada}`} 
+                    key={entrada.identrada}
+                    className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-xl hover:border-blue-500 dark:hover:border-blue-500 transition-all flex h-40"
+                  >
+                    {/* Póster */}
+                    <div className="w-28 shrink-0 relative overflow-hidden">
+                      <img src={peli.posterurl} alt="Poster" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      {!esActiva && <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm"><span className="text-white text-xs font-bold uppercase tracking-widest rotate-[-45deg] bg-red-600 px-3 py-1">Usada</span></div>}
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 mt-2">
+
+                    {/* Info */}
+                    <div className="p-4 flex flex-col justify-between flex-1 min-w-0">
                       <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold transition-colors">Sesión</p>
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors">
-                          {new Date(entrada.exhibicion.fecha).toLocaleDateString()} a las {entrada.exhibicion.horainicio.substring(0, 5)}
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded inline-block mb-1.5 ${esActiva ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
+                          {entrada.estado}
+                        </span>
+                        <h3 className="font-bold text-gray-900 dark:text-white truncate text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{peli.titulo}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {new Date(entrada.exhibicion.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'long' })} • {entrada.exhibicion.horainicio.substring(0, 5)}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold transition-colors">Comprada el</p>
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors">
-                          {new Date(entrada.fechacompra).toLocaleDateString()}
-                        </p>
+                      
+                      <div className="flex justify-between items-end">
+                        <span className="text-sm font-black text-blue-600 dark:text-blue-400">{entrada.preciofinal}€</span>
+                        <span className="text-[10px] font-mono text-gray-400">#NV-{entrada.identrada}</span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
+                )
+              })}
+            </div>
 
-                  <div className="p-6 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center border-t sm:border-t-0 sm:border-l border-gray-200 dark:border-gray-700 transition-colors">
-                    <Link 
-                      to={`/ticket/${idUrlTicket}`}
-                      className="cursor-pointer w-full sm:w-auto text-center bg-gray-900 text-white hover:bg-gray-700 dark:bg-blue-600/20 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white px-6 py-3 rounded-lg font-bold transition-colors"
+            {totalPaginas > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-10 pt-6 border-t border-gray-200 dark:border-gray-800">
+                <button 
+                  onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+                  disabled={paginaActual === 1}
+                  className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all"
+                >
+                  &lt; Anterior
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(num => (
+                    <button
+                      key={num}
+                      onClick={() => setPaginaActual(num)}
+                      className={`cursor-pointer w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                        paginaActual === num 
+                          ? 'bg-blue-600 text-white shadow-md' 
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                      }`}
                     >
-                      Ver Ticket
-                    </Link>
-                  </div>
-
+                      {num}
+                    </button>
+                  ))}
                 </div>
-              )
-            })}
-          </div>
+
+                <button 
+                  onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+                  disabled={paginaActual === totalPaginas}
+                  className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all"
+                >
+                  Siguiente &gt;
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

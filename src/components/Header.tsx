@@ -47,7 +47,7 @@ export default function Header({ session, nombreUsuario, avatarUrl, esadmin, onL
                 to="/admin" 
                 className="hover:text-purple-600 dark:hover:text-purple-400 text-purple-600 dark:text-purple-400 font-bold transition-colors text-sm bg-purple-50 dark:bg-purple-950/40 px-2.5 py-1 rounded-md"
               >
-                Panel Admin 🛠️
+                Admin
               </Link>
             )}
             
