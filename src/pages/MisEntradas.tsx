@@ -68,7 +68,11 @@ export default function MisEntradas() {
               {entradasPaginadas.map(entrada => {
                 const peli = Array.isArray(entrada.exhibicion.pelicula) ? entrada.exhibicion.pelicula[0] : entrada.exhibicion.pelicula;
                 
-                const fechaExhibicion = new Date(`${entrada.exhibicion.fecha}T${entrada.exhibicion.horainicio}`);
+                const fechaSolo = entrada.exhibicion.fecha.split('T')[0];
+                const [anio, mes, dia] = fechaSolo.split('-');
+                const [hora, minuto] = entrada.exhibicion.horainicio.split(':');
+                
+                const fechaExhibicion = new Date(Number(anio), Number(mes) - 1, Number(dia), Number(hora), Number(minuto));
                 const fechaCaducidad = new Date(fechaExhibicion.getTime() + (3 * 60 * 60 * 1000));
                 const ahora = new Date();
                 
