@@ -32,12 +32,22 @@ export default function Header({ session, nombreUsuario, avatarUrl, esadmin, onL
               Noticias
             </button>
 
+            {session && (
+              <Link 
+                to="/mis-entradas" 
+                className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium text-sm"
+              >
+                Mis Entradas
+              </Link>
+            )}
+
+            {/* BOTÓN EXCLUSIVO PARA ADMINISTRADORES */}
             {esadmin && (
               <Link 
                 to="/admin" 
                 className="hover:text-purple-600 dark:hover:text-purple-400 text-purple-600 dark:text-purple-400 font-bold transition-colors text-sm bg-purple-50 dark:bg-purple-950/40 px-2.5 py-1 rounded-md"
               >
-                Admin
+                Panel Admin 🛠️
               </Link>
             )}
             
