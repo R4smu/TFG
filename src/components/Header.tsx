@@ -23,14 +23,23 @@ export default function Header({ session, nombreUsuario, avatarUrl, esadmin, onL
           <Link to="/" className="text-2xl font-bold text-blue-600 dark:text-blue-500 tracking-tight">🎥 Novavista</Link>
           
           <div className="space-x-4 flex items-center">
-            <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Cartelera</Link>
+            <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium text-sm">Cartelera</Link>
             
             <button 
               onClick={() => setMostrarNoticias(true)}
-              className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+              className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium text-sm"
             >
               Noticias
             </button>
+
+            {esadmin && (
+              <Link 
+                to="/admin" 
+                className="hover:text-purple-600 dark:hover:text-purple-400 text-purple-600 dark:text-purple-400 font-bold transition-colors text-sm bg-purple-50 dark:bg-purple-950/40 px-2.5 py-1 rounded-md"
+              >
+                Admin
+              </Link>
+            )}
             
             <button onClick={onToggleTema} className="cursor-pointer p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ml-2">
               {modoOscuro ? (
@@ -54,7 +63,7 @@ export default function Header({ session, nombreUsuario, avatarUrl, esadmin, onL
               </div>
             ) : (
               <div className="border-l border-gray-300 dark:border-gray-700 pl-4">
-                <Link to="/login" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors">Iniciar Sesión</Link>
+                <Link to="/login" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm">Iniciar Sesión</Link>
               </div>
             )}
           </div>

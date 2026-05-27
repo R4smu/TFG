@@ -8,6 +8,7 @@ import MisEntradas from './pages/MisEntradas'
 import Footer from './components/Footer'
 import Header from './components/Header'
 import Ticket from './pages/Ticket'
+import AdminPanel from './pages/AdminPanel'
 
 function AppContent() {
   const [session, setSession] = useState<any>(null)
@@ -90,6 +91,7 @@ function AppContent() {
           <Route path="/perfil" element={<Perfil esadmin={esadmin} />} />
           <Route path="/mis-entradas" element={<MisEntradas />} />
           <Route path="/ticket/:id" element={<Ticket />} />
+          <Route path="/admin" element={<AdminPanel esadmin={esadmin} />} />
         </Routes>
       </main>
 
