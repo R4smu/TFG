@@ -11,7 +11,8 @@ export default function MisEntradas() {
   
   const [filtroTexto, setFiltroTexto] = useState('')
   const [ordenarPor, setOrdenarPor] = useState<'fecha' | 'precio' | 'titulo'>('fecha')
-  const [ordenAscendente, setOrdenAscendente] = useState(false) // Por defecto descendente (más recientes primero)
+  const [ordenAscendente, setOrdenAscendente] = useState(false)
+  const [filtroEstado, setFiltroEstado] = useState<'todas' | 'activas' | 'historial'>('todas')
 
   useEffect(() => {
     const cargarMisEntradas = async () => {
@@ -41,9 +42,29 @@ export default function MisEntradas() {
 
   const entradasProcesadas = [...entradas]
     .filter(entrada => {
-      if (!filtroTexto) return true;
       const peli = Array.isArray(entrada.exhibicion.pelicula) ? entrada.exhibicion.pelicula[0] : entrada.exhibicion.pelicula;
-      return peli.titulo.toLowerCase().includes(filtroTexto.toLowerCase());
+      
+      if (filtroTexto && !peli.titulo.toLowerCase().includes(filtroTexto.toLowerCase())) {
+        return false;
+      }
+
+      const fechaSolo = entrada.exhibicion.fecha.split('T')[0];
+      const [anio, mes, dia] = fechaSolo.split('-');
+      const [hora, minuto] = entrada.exhibicion.horainicio.split(':');
+      
+      const fechaExhibicion = new Date(Number(anio), Number(mes) - 1, Number(dia), Number(hora), Number(minuto));
+      const fechaCaducidad = new Date(fechaExhibicion.getTime() + (3 * 60 * 60 * 1000));
+      const ahora = new Date();
+      
+      const haCaducado = ahora > fechaCaducidad;
+      const estadoLimpio = String(entrada.estado || '').toLowerCase().trim();
+      const esCanceladaDB = estadoLimpio === 'cancelada';
+      const esActiva = !haCaducado && !esCanceladaDB;
+
+      if (filtroEstado === 'activas' && !esActiva) return false;
+      if (filtroEstado === 'historial' && esActiva) return false;
+
+      return true;
     })
     .sort((a, b) => {
       const peliA = Array.isArray(a.exhibicion.pelicula) ? a.exhibicion.pelicula[0] : a.exhibicion.pelicula;
@@ -66,8 +87,9 @@ export default function MisEntradas() {
 
   useEffect(() => {
     setPaginaActual(1)
-  }, [filtroTexto, ordenarPor, ordenAscendente])
+  }, [filtroTexto, ordenarPor, ordenAscendente, filtroEstado])
 
+  // LÓGICA DE PAGINACIÓN
   const totalPaginas = Math.ceil(entradasProcesadas.length / itemsPorPagina)
   if (paginaActual > totalPaginas && totalPaginas > 0) setPaginaActual(totalPaginas)
 
@@ -96,10 +118,10 @@ export default function MisEntradas() {
         ) : (
           <>
             {/* BARRA DE BÚSQUEDA Y ORDENACIÓN */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
               
               {/* Buscador */}
-              <div className="relative w-full sm:w-1/2 md:w-1/3">
+              <div className="relative w-full md:w-1/3">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
@@ -113,11 +135,24 @@ export default function MisEntradas() {
               </div>
 
               {/* Filtros */}
-              <div className="flex w-full sm:w-auto gap-2">
+              <div className="flex flex-wrap w-full md:w-auto gap-2">
+                
+                {/* Selector de Estado */}
+                <select 
+                  value={filtroEstado} 
+                  onChange={(e) => setFiltroEstado(e.target.value as any)}
+                  className="flex-1 md:flex-none bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors cursor-pointer"
+                >
+                  <option value="todas">Todos los estados</option>
+                  <option value="activas">Solo Activas (Pendientes)</option>
+                  <option value="historial">Historial (Finalizadas/Canceladas)</option>
+                </select>
+
+                {/* Selector de Ordenación */}
                 <select 
                   value={ordenarPor} 
                   onChange={(e) => setOrdenarPor(e.target.value as any)}
-                  className="w-full sm:w-auto bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors cursor-pointer"
+                  className="flex-1 md:flex-none bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors cursor-pointer"
                 >
                   <option value="fecha">Fecha de Sesión</option>
                   <option value="titulo">Nombre Película</option>
@@ -137,9 +172,13 @@ export default function MisEntradas() {
 
             </div>
 
+            {/* GRID DE ENTRADAS PAGINADO */}
             {entradasProcesadas.length === 0 ? (
-              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                No hay entradas que coincidan con tu búsqueda.
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center transition-colors mt-6">
+                <p className="text-gray-500 dark:text-gray-400">No hay entradas que coincidan con tus filtros.</p>
+                <button onClick={() => { setFiltroTexto(''); setFiltroEstado('todas'); }} className="mt-4 text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">
+                  Limpiar filtros
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -155,10 +194,8 @@ export default function MisEntradas() {
                   const ahora = new Date();
                   
                   const haCaducado = ahora > fechaCaducidad;
-                  
                   const estadoLimpio = String(entrada.estado || '').toLowerCase().trim();
                   const esCanceladaDB = estadoLimpio === 'cancelada';
-
                   const esActiva = !haCaducado && !esCanceladaDB;
 
                   return (
