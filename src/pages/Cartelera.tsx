@@ -21,7 +21,8 @@ export default function Cartelera() {
 
   useEffect(() => {
     const obtenerPeliculas = async () => {
-      const { data } = await supabase.from('pelicula').select('*')
+      const { data } = await supabase.from('pelicula').select('*').eq('activa', true)
+      
       if (data) setPeliculas(data)
       setCargando(false)
     }
@@ -51,7 +52,6 @@ export default function Cartelera() {
         
       </div>
 
-      {/* Renderizado del Modal */}
       {peliculaSeleccionada && (
         <MovieModal 
           pelicula={peliculaSeleccionada} 
