@@ -27,6 +27,9 @@ export default function GestorPeliculas() {
   const [procesando, setProcesando] = useState(false)
   const [peliculaParaExhibiciones, setPeliculaParaExhibiciones] = useState<Pelicula | null>(null)
 
+  const [paginaActual, setPaginaActual] = useState(1)
+  const itemsPorPagina = 8
+
   useEffect(() => {
     const inicializarPanel = async () => {
       setCargando(true)
@@ -41,6 +44,13 @@ export default function GestorPeliculas() {
     }
     inicializarPanel()
   }, [])
+
+  const totalPaginas = Math.ceil(peliculas.length / itemsPorPagina)
+  if (paginaActual > totalPaginas && totalPaginas > 0) setPaginaActual(totalPaginas)
+
+  const indiceUltimoItem = paginaActual * itemsPorPagina
+  const indicePrimerItem = indiceUltimoItem - itemsPorPagina
+  const peliculasPaginadas = peliculas.slice(indicePrimerItem, indiceUltimoItem)
 
   const abrirModalCrear = () => {
     const fechaHoy = new Date().toISOString().split('T')[0]
@@ -73,6 +83,7 @@ export default function GestorPeliculas() {
       const peliculaACrear = { ...formData, idusuario: idAdmin }
       const { error } = await supabase.from('pelicula').insert([peliculaACrear])
       if (error) alert("Error al crear: " + error.message)
+      else setPaginaActual(1)
     }
 
     setProcesando(false)
@@ -97,10 +108,10 @@ export default function GestorPeliculas() {
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 animate-fade-in shadow-md transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors">Gestión de Cartelera</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors">Gestión de Cartelera ({peliculas.length})</h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm transition-colors">Añade, edita o elimina películas de la base de datos.</p>
         </div>
-        <button onClick={abrirModalCrear} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold transition-colors flex items-center gap-2 shadow-sm">
+        <button onClick={abrirModalCrear} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold transition-colors flex items-center gap-2 shadow-sm cursor-pointer">
           <span>+</span> Nueva Película
         </button>
       </div>
@@ -116,7 +127,7 @@ export default function GestorPeliculas() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-sm transition-colors">
-            {peliculas.map(pelicula => (
+            {peliculasPaginadas.map(pelicula => (
               <tr key={pelicula.idpelicula} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors bg-white dark:bg-transparent">
                 <td className="p-4 flex items-center gap-4">
                   <img src={pelicula.posterurl} alt="poster" className="w-10 h-14 object-cover rounded shadow border border-gray-200 dark:border-gray-700" />
@@ -129,9 +140,9 @@ export default function GestorPeliculas() {
                 <td className="p-4 text-gray-700 dark:text-gray-300 transition-colors">{pelicula.genero}<br/><span className="text-gray-500">{pelicula.duracion} min</span></td>
                 <td className="p-4 text-gray-700 dark:text-gray-300 transition-colors">{pelicula.director}</td>
                 <td className="p-4 text-right space-x-2">
-                  <button onClick={() => setPeliculaParaExhibiciones(pelicula)} className="bg-purple-100 dark:bg-purple-600/20 text-purple-700 dark:text-purple-400 hover:bg-purple-600 hover:text-white px-3 py-1 rounded transition-colors font-medium">Sesiones</button>
-                  <button onClick={() => abrirModalEditar(pelicula)} className="bg-blue-100 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400 hover:bg-blue-600 hover:text-white px-3 py-1 rounded transition-colors font-medium">Editar</button>
-                  <button onClick={() => eliminarPelicula(pelicula.idpelicula)} className="bg-red-100 dark:bg-red-600/20 text-red-700 dark:text-red-400 hover:bg-red-600 hover:text-white px-3 py-1 rounded transition-colors font-medium">Borrar</button>
+                  <button onClick={() => setPeliculaParaExhibiciones(pelicula)} className="bg-purple-100 dark:bg-purple-600/20 text-purple-700 dark:text-purple-400 hover:bg-purple-600 hover:text-white px-3 py-1 rounded transition-colors font-medium cursor-pointer">Sesiones</button>
+                  <button onClick={() => abrirModalEditar(pelicula)} className="bg-blue-100 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400 hover:bg-blue-600 hover:text-white px-3 py-1 rounded transition-colors font-medium cursor-pointer">Editar</button>
+                  <button onClick={() => eliminarPelicula(pelicula.idpelicula)} className="bg-red-100 dark:bg-red-600/20 text-red-700 dark:text-red-400 hover:bg-red-600 hover:text-white px-3 py-1 rounded transition-colors font-medium cursor-pointer">Borrar</button>
                 </td>
               </tr>
             ))}
@@ -139,12 +150,31 @@ export default function GestorPeliculas() {
         </table>
       </div>
 
+      {/* BOTONERA DE PAGINACIÓN */}
+      {totalPaginas > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <button onClick={() => setPaginaActual(p => Math.max(1, p - 1))} disabled={paginaActual === 1} className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all">
+            &lt; Anterior
+          </button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(num => (
+              <button key={num} onClick={() => setPaginaActual(num)} className={`cursor-pointer w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${paginaActual === num ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
+                {num}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))} disabled={paginaActual === totalPaginas} className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all">
+            Siguiente &gt;
+          </button>
+        </div>
+      )}
+
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 dark:bg-black/80 backdrop-blur-sm transition-colors">
           <div className="bg-white dark:bg-gray-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl transition-colors">
             <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-900 z-10 transition-colors">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">{modoEdicion ? 'Editar Película' : 'Nueva Película'}</h3>
-              <button onClick={() => setModalAbierto(false)} className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 w-8 h-8 rounded-full flex items-center justify-center transition-colors">✕</button>
+              <button onClick={() => setModalAbierto(false)} className="cursor-pointer text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 w-8 h-8 rounded-full flex items-center justify-center transition-colors">✕</button>
             </div>
             
             <form onSubmit={guardarPelicula} className="p-6 space-y-4">
@@ -188,8 +218,8 @@ export default function GestorPeliculas() {
               </div>
 
               <div className="flex justify-end gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-800 transition-colors">
-                <button type="button" onClick={() => setModalAbierto(false)} className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">Cancelar</button>
-                <button type="submit" disabled={procesando} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow-md transition-colors disabled:opacity-50">
+                <button type="button" onClick={() => setModalAbierto(false)} className="cursor-pointer px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">Cancelar</button>
+                <button type="submit" disabled={procesando} className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow-md transition-colors disabled:opacity-50">
                   {procesando ? 'Guardando...' : 'Guardar Película'}
                 </button>
               </div>

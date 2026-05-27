@@ -16,6 +16,9 @@ export default function GestorSalas() {
   const [modoEdicion, setModoEdicion] = useState(false)
   const [procesando, setProcesando] = useState(false)
 
+  const [paginaActual, setPaginaActual] = useState(1)
+  const itemsPorPagina = 8
+
   const [formData, setFormData] = useState({
     idsala: 0,
     nombresala: '',
@@ -34,6 +37,15 @@ export default function GestorSalas() {
   useEffect(() => {
     cargarSalas()
   }, [])
+
+  const totalPaginas = Math.ceil(salas.length / itemsPorPagina)
+  if (paginaActual > totalPaginas && totalPaginas > 0) {
+    setPaginaActual(totalPaginas)
+  }
+  
+  const indiceUltimoItem = paginaActual * itemsPorPagina
+  const indicePrimerItem = indiceUltimoItem - itemsPorPagina
+  const salasPaginadas = salas.slice(indicePrimerItem, indiceUltimoItem)
 
   const abrirParaCrear = () => {
     setFormData({ idsala: 0, nombresala: '', filas: 5, asientosPorFila: 10 })
@@ -66,7 +78,6 @@ export default function GestorSalas() {
         if (error) throw error
       } else {
         const capacidadTotal = formData.filas * formData.asientosPorFila;
-        
         const { data: nuevaSalaData, error: salaError } = await supabase
           .from('sala')
           .insert([{ nombresala: formData.nombresala, capacidad: capacidadTotal, activa: true }])
@@ -88,6 +99,8 @@ export default function GestorSalas() {
 
         const { error: asientosError } = await supabase.from('asiento').insert(nuevosAsientos)
         if (asientosError) throw asientosError
+        
+        setPaginaActual(Math.ceil((salas.length + 1) / itemsPorPagina))
       }
 
       setModalAbierto(false)
@@ -126,7 +139,7 @@ export default function GestorSalas() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-sm transition-colors">
-            {salas.map(sala => (
+            {salasPaginadas.map(sala => (
               <tr key={sala.idsala} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${!sala.activa ? 'opacity-60 bg-gray-50 dark:bg-gray-900/30' : 'bg-white dark:bg-transparent'}`}>
                 <td className="p-4 text-gray-400 font-mono">#{sala.idsala}</td>
                 <td className="p-4 font-bold text-gray-900 dark:text-white">{sala.nombresala}</td>
@@ -150,11 +163,46 @@ export default function GestorSalas() {
         </table>
       </div>
 
+      {totalPaginas > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <button 
+            onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+            disabled={paginaActual === 1}
+            className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all"
+          >
+            &lt; Anterior
+          </button>
+
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(num => (
+              <button
+                key={num}
+                onClick={() => setPaginaActual(num)}
+                className={`cursor-pointer w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                  paginaActual === num 
+                    ? 'bg-blue-600 text-white shadow-md' 
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+
+          <button 
+            onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+            disabled={paginaActual === totalPaginas}
+            className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all"
+          >
+            Siguiente &gt;
+          </button>
+        </div>
+      )}
+
       {/* MODAL DE CREACIÓN / EDICIÓN */}
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 dark:bg-black/80 backdrop-blur-sm transition-colors">
           <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl transition-colors overflow-hidden">
-            
             <div className="p-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">{modoEdicion ? 'Renombrar Sala' : 'Configurar Nueva Sala'}</h3>
               <button onClick={() => setModalAbierto(false)} className="cursor-pointer text-gray-400 hover:text-gray-900 dark:hover:text-white w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 transition-colors">✕</button>

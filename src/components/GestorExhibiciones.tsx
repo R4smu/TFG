@@ -32,6 +32,9 @@ export default function GestorExhibiciones({ pelicula, onClose }: GestorExhibici
   const [cargando, setCargando] = useState(true)
   const [procesando, setProcesando] = useState(false)
 
+  const [paginaActual, setPaginaActual] = useState(1)
+  const itemsPorPagina = 9
+
   const fechaHoy = new Date().toISOString().split('T')[0]
 
   const [formData, setFormData] = useState({
@@ -69,6 +72,13 @@ export default function GestorExhibiciones({ pelicula, onClose }: GestorExhibici
     cargarDatos()
   }, [pelicula.idpelicula])
 
+  const totalPaginas = Math.ceil(exhibiciones.length / itemsPorPagina)
+  if (paginaActual > totalPaginas && totalPaginas > 0) setPaginaActual(totalPaginas)
+
+  const indiceUltimoItem = paginaActual * itemsPorPagina
+  const indicePrimerItem = indiceUltimoItem - itemsPorPagina
+  const exhibicionesPaginadas = exhibiciones.slice(indicePrimerItem, indiceUltimoItem)
+
   const manejarCambio = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
@@ -96,8 +106,11 @@ export default function GestorExhibiciones({ pelicula, onClose }: GestorExhibici
     }
 
     const { error } = await supabase.from('exhibicion').insert([nuevaExhibicion])
-    if (error) alert("Error al crear sesión: " + error.message)
-    else cargarDatos()
+    if (error) {
+      alert("Error al crear sesión: " + error.message)
+    } else {
+      cargarDatos()
+    }
     
     setProcesando(false)
   }
@@ -149,7 +162,6 @@ export default function GestorExhibiciones({ pelicula, onClose }: GestorExhibici
                 <input required type="number" step="0.10" name="preciobase" value={formData.preciobase} onChange={manejarCambio} className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 transition-colors" />
               </div>
               
-              {/* NUEVO INPUT DE DESCUENTO */}
               <div>
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 transition-colors">% Desc.</label>
                 <input required type="number" min="0" max="100" name="descuento_porcentaje" value={formData.descuento_porcentaje} onChange={manejarCambio} className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 transition-colors" title="Dejar en 0 si no hay oferta" />
@@ -169,49 +181,67 @@ export default function GestorExhibiciones({ pelicula, onClose }: GestorExhibici
             ) : exhibiciones.length === 0 ? (
               <p className="text-yellow-600 dark:text-yellow-500 bg-yellow-50 dark:bg-yellow-500/10 p-4 rounded-lg text-sm border border-yellow-200 dark:border-yellow-500/20 transition-colors">No hay ninguna sesión programada para esta película. No aparecerá en la cartelera de compra hasta que añadas al menos una.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {exhibiciones.map(ex => {
-                  const tieneDescuento = ex.descuento_porcentaje > 0;
-                  const precioFinal = ex.preciobase - (ex.preciobase * (ex.descuento_porcentaje / 100));
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {exhibicionesPaginadas.map(ex => {
+                    const tieneDescuento = ex.descuento_porcentaje > 0;
+                    const precioFinal = ex.preciobase - (ex.preciobase * (ex.descuento_porcentaje / 100));
 
-                  return (
-                    <div key={ex.idexhibicion} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl flex justify-between items-center group hover:border-blue-500 dark:hover:border-gray-500 transition-colors shadow-sm">
-                      <div>
-                        <p className="font-bold text-gray-900 dark:text-white flex items-center gap-2 transition-colors">
-                          {new Date(ex.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
-                          <span className="text-blue-600 dark:text-blue-400">{ex.horainicio.substring(0, 5)}</span>
-                        </p>
-                        
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 transition-colors flex items-center gap-1.5">
-                          <span>{ex.sala.nombresala}</span>
-                          <span>•</span>
+                    return (
+                      <div key={ex.idexhibicion} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl flex justify-between items-center group hover:border-blue-500 dark:hover:border-gray-500 transition-colors shadow-sm">
+                        <div>
+                          <p className="font-bold text-gray-900 dark:text-white flex items-center gap-2 transition-colors">
+                            {new Date(ex.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                            <span className="text-blue-600 dark:text-blue-400">{ex.horainicio.substring(0, 5)}</span>
+                          </p>
                           
-                          {/* RENDERIZADO CONDICIONAL DEL PRECIO/OFERTA */}
-                          {tieneDescuento ? (
-                            <span className="flex items-center gap-1.5">
-                              <span className="line-through opacity-60">{ex.preciobase}€</span>
-                              <span className="font-bold text-green-600 dark:text-green-400">{precioFinal.toFixed(2)}€</span>
-                              <span className="bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 px-1.5 py-0.5 rounded text-[10px] font-bold">
-                                -{ex.descuento_porcentaje}%
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 transition-colors flex items-center gap-1.5">
+                            <span>{ex.sala.nombresala}</span>
+                            <span>•</span>
+                            
+                            {tieneDescuento ? (
+                              <span className="flex items-center gap-1.5">
+                                <span className="line-through opacity-60">{ex.preciobase}€</span>
+                                <span className="font-bold text-green-600 dark:text-green-400">{precioFinal.toFixed(2)}€</span>
+                                <span className="bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                  -{ex.descuento_porcentaje}%
+                                </span>
                               </span>
-                            </span>
-                          ) : (
-                            <span>{ex.preciobase}€</span>
-                          )}
+                            ) : (
+                              <span>{ex.preciobase}€</span>
+                            )}
+                          </div>
                         </div>
-
+                        <button 
+                          onClick={() => borrarExhibicion(ex.idexhibicion)} 
+                          className="cursor-pointer text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-500 dark:hover:bg-red-500/10 p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                          title="Borrar sesión"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => borrarExhibicion(ex.idexhibicion)} 
-                        className="cursor-pointer text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-500 dark:hover:bg-red-500/10 p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                        title="Borrar sesión"
-                      >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                    )
+                  })}
+                </div>
+
+                {totalPaginas > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
+                    <button onClick={() => setPaginaActual(p => Math.max(1, p - 1))} disabled={paginaActual === 1} className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all">
+                      &lt; Anterior
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(num => (
+                        <button key={num} onClick={() => setPaginaActual(num)} className={`cursor-pointer w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${paginaActual === num ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
+                          {num}
+                        </button>
+                      ))}
                     </div>
-                  )
-                })}
-              </div>
+                    <button onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))} disabled={paginaActual === totalPaginas} className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all">
+                      Siguiente &gt;
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
           

@@ -36,7 +36,7 @@ export default function AdminPanel({ esadmin }: AdminPanelProps) {
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            Métricas y Negocio
+            · Métricas y Negocio
           </button>
 
           {/* Botón Películas */}
@@ -48,7 +48,7 @@ export default function AdminPanel({ esadmin }: AdminPanelProps) {
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            🎬 Gestionar Películas
+            · Gestionar Películas
           </button>
 
           {/* Botón Salas */}
@@ -60,7 +60,7 @@ export default function AdminPanel({ esadmin }: AdminPanelProps) {
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            🏛️ Gestionar Salas
+            · Gestionar Salas
           </button>
 
           {/* Botón Usuarios */}
@@ -72,7 +72,7 @@ export default function AdminPanel({ esadmin }: AdminPanelProps) {
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            👥 Control de Usuarios
+            · Control de Usuarios
           </button>
         </nav>
       </div>

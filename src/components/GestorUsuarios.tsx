@@ -24,6 +24,8 @@ export default function GestorUsuarios() {
   const [modoEdicion, setModoEdicion] = useState(false)
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Partial<Usuario> & { password?: string }>({})
   const [procesando, setProcesando] = useState(false)
+  const [paginaActual, setPaginaActual] = useState(1)
+  const itemsPorPagina = 8
 
   const cargarUsuarios = async () => {
     setCargando(true)
@@ -36,6 +38,13 @@ export default function GestorUsuarios() {
   useEffect(() => {
     cargarUsuarios()
   }, [])
+
+  const totalPaginas = Math.ceil(usuarios.length / itemsPorPagina)
+  if (paginaActual > totalPaginas && totalPaginas > 0) setPaginaActual(totalPaginas)
+
+  const indiceUltimoItem = paginaActual * itemsPorPagina
+  const indicePrimerItem = indiceUltimoItem - itemsPorPagina
+  const usuariosPaginados = usuarios.slice(indicePrimerItem, indiceUltimoItem)
 
   const abrirModalCrear = () => {
     setUsuarioSeleccionado({ nombre: '', email: '', telefono: '', esadmin: false, alta: true, password: '' })
@@ -60,7 +69,6 @@ export default function GestorUsuarios() {
     const esAdminFinal = usuarioSeleccionado.esadmin === true || String(usuarioSeleccionado.esadmin) === 'true';
 
     if (modoEdicion) {
-      // --- MODO EDICIÓN ---
       const { idusuario, password, ...datosAActualizar } = usuarioSeleccionado as any
       const { error } = await supabase
         .from('usuario')
@@ -71,7 +79,6 @@ export default function GestorUsuarios() {
       else setModalAbierto(false)
 
     } else {
-      // --- MODO CREACIÓN ---
       const password = usuarioSeleccionado.password || ''
       if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/.test(password)) {
         alert("Error: La contraseña debe tener al menos 6 caracteres, 1 mayúscula, 1 número y 1 símbolo.")
@@ -88,7 +95,6 @@ export default function GestorUsuarios() {
       if (errorAuth) {
         alert("Error al registrar: " + errorAuth.message)
       } else if (authData.user) {
-        
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         const { data: checkData, error: dbError } = await supabase
@@ -103,6 +109,7 @@ export default function GestorUsuarios() {
           alert("El usuario se ha creado, pero tu base de datos ha bloqueado el cambio de rol. Comprueba que el RLS esté desactivado.")
         } else {
           setModalAbierto(false)
+          setPaginaActual(Math.ceil((usuarios.length + 1) / itemsPorPagina))
         }
       }
     }
@@ -146,7 +153,7 @@ export default function GestorUsuarios() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-            {usuarios.map(u => (
+            {usuariosPaginados.map(u => (
               <tr key={u.idusuario} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors bg-white dark:bg-transparent">
                 <td className="p-4">
                   <p className="font-bold text-gray-900 dark:text-white">{u.nombre}</p>
@@ -177,6 +184,25 @@ export default function GestorUsuarios() {
           </tbody>
         </table>
       </div>
+
+      {/* BOTONERA DE PAGINACIÓN */}
+      {totalPaginas > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <button onClick={() => setPaginaActual(p => Math.max(1, p - 1))} disabled={paginaActual === 1} className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all">
+            &lt; Anterior
+          </button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(num => (
+              <button key={num} onClick={() => setPaginaActual(num)} className={`cursor-pointer w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${paginaActual === num ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
+                {num}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))} disabled={paginaActual === totalPaginas} className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all">
+            Siguiente &gt;
+          </button>
+        </div>
+      )}
 
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 dark:bg-black/80 backdrop-blur-sm">
