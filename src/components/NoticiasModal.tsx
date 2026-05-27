@@ -21,12 +21,13 @@ export default function NoticiasModal({ onClose, esadmin }: NoticiasModalProps) 
   const [cargando, setCargando] = useState(true)
   const [expandidaId, setExpandidaId] = useState<number | null>(null)
   
-  // Estados de Administración
   const [modalFormAbierto, setModalFormAbierto] = useState(false)
   const [formData, setFormData] = useState<Partial<Noticia>>({})
   const [procesando, setProcesando] = useState(false)
   
-  // Drag & Drop nativo
+  const [paginaActual, setPaginaActual] = useState(1)
+  const itemsPorPagina = 5
+
   const [ordenCambiado, setOrdenCambiado] = useState(false)
   const [guardandoOrden, setGuardandoOrden] = useState(false)
   const dragItem = useRef<number | null>(null)
@@ -52,7 +53,13 @@ export default function NoticiasModal({ onClose, esadmin }: NoticiasModalProps) 
     cargarNoticias()
   }, [])
 
-  // --- LÓGICA DE DRAG AND DROP ---
+  const totalPaginas = Math.ceil(noticias.length / itemsPorPagina)
+  if (paginaActual > totalPaginas && totalPaginas > 0) setPaginaActual(totalPaginas)
+
+  const indiceUltimoItem = paginaActual * itemsPorPagina
+  const indicePrimerItem = indiceUltimoItem - itemsPorPagina
+  const noticiasPaginadas = noticias.slice(indicePrimerItem, indiceUltimoItem)
+
   const handleSort = () => {
     if (dragItem.current === null || dragOverItem.current === null) return;
     
@@ -82,7 +89,7 @@ export default function NoticiasModal({ onClose, esadmin }: NoticiasModalProps) 
     }
   }
 
-  // --- LÓGICA CRUD ADMINISTRADOR ---
+  // --- CRUD ADMINISTRADOR ---
   const abrirParaCrear = () => {
     setFormData({ titulo: '', descripcion: '', fechapublicacion: new Date().toISOString().split('T')[0], imagenurl: '' })
     setModalFormAbierto(true)
@@ -119,15 +126,14 @@ export default function NoticiasModal({ onClose, esadmin }: NoticiasModalProps) 
       }
 
       if (formData.idnoticia) {
-        // Editar
         const { idnoticia, ...datosActualizar } = formData
         const { error } = await supabase.from('noticia').update(datosActualizar).eq('idnoticia', idnoticia)
         if (error) throw error
       } else {
-        // Crear nueva 
         const nueva = { ...formData, idusuario: userData.idusuario, orden: 0 }
         const { error } = await supabase.from('noticia').insert([nueva])
         if (error) throw error
+        setPaginaActual(1)
       }
 
       setModalFormAbierto(false)
@@ -145,7 +151,6 @@ export default function NoticiasModal({ onClose, esadmin }: NoticiasModalProps) 
       {/* MODAL PRINCIPAL */}
       <div className="bg-white dark:bg-gray-900 w-full max-w-4xl max-h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in border border-gray-200 dark:border-gray-700 transition-colors relative">
         
-        {/* CABECERA */}
         <div className="p-5 md:px-8 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 z-10 transition-colors shrink-0">
           <div className="flex items-center gap-3">
             <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600 dark:text-blue-400">
@@ -173,86 +178,123 @@ export default function NoticiasModal({ onClose, esadmin }: NoticiasModalProps) 
           </div>
         )}
 
-        {/* LISTA DE NOTICIAS ACORDEÓN */}
-        <div className="p-6 md:p-8 overflow-y-auto flex-1 bg-gray-50 dark:bg-gray-900/50 transition-colors space-y-4">
-          {cargando ? (
-            <p className="text-center text-gray-500 py-10 text-base animate-pulse">Cargando noticias...</p>
-          ) : noticias.length === 0 ? (
-            <div className="text-center py-10">
-              <p className="text-gray-500 text-base">No hay noticias publicadas en este momento.</p>
-              <p className="text-gray-400 text-sm mt-1">Mantente atento a las próximas novedades.</p>
-            </div>
-          ) : (
-            noticias.map((noticia, index) => {
-              const estaExpandida = expandidaId === noticia.idnoticia;
-              
-              return (
-                <div 
-                  key={noticia.idnoticia} 
-                  draggable={esadmin}
-                  onDragStart={() => dragItem.current = index}
-                  onDragEnter={() => dragOverItem.current = index}
-                  onDragEnd={handleSort}
-                  onDragOver={(e) => e.preventDefault()}
-                  className={`bg-white dark:bg-gray-800 border rounded-xl overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer ${esadmin ? 'cursor-grab active:cursor-grabbing' : ''} ${estaExpandida ? 'border-blue-500 dark:border-blue-500 ring-1 ring-blue-500' : 'border-gray-200 dark:border-gray-700'}`}
-                  onClick={() => setExpandidaId(estaExpandida ? null : noticia.idnoticia)}
-                >
-                  <div className="p-5 flex justify-between items-start gap-4">
-                    <div className="flex gap-3 w-full">
-                      {esadmin && (
-                        <div className="text-gray-300 dark:text-gray-600 mt-1 cursor-grab" title="Arrastrar para ordenar">
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 6a2 2 0 11-4 0 2 2 0 014 0zM8 12a2 2 0 11-4 0 2 2 0 014 0zM8 18a2 2 0 11-4 0 2 2 0 014 0zM16 6a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 11-4 0 2 2 0 014 0zM16 18a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+        {/* LISTA DE NOTICIAS */}
+        <div className="p-6 md:p-8 overflow-y-auto flex-1 bg-gray-50 dark:bg-gray-900/50 transition-colors flex flex-col">
+          <div className="space-y-4 flex-1">
+            {cargando ? (
+              <p className="text-center text-gray-500 py-10 text-base animate-pulse">Cargando noticias...</p>
+            ) : noticias.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-gray-500 text-base">No hay noticias publicadas en este momento.</p>
+                <p className="text-gray-400 text-sm mt-1">Mantente atento a las próximas novedades.</p>
+              </div>
+            ) : (
+              noticiasPaginadas.map((noticia, indexVisual) => {
+                const estaExpandida = expandidaId === noticia.idnoticia;
+                const indiceAbsoluto = indicePrimerItem + indexVisual;
+                
+                return (
+                  <div 
+                    key={noticia.idnoticia} 
+                    draggable={esadmin}
+                    onDragStart={() => dragItem.current = indiceAbsoluto}
+                    onDragEnter={() => dragOverItem.current = indiceAbsoluto}
+                    onDragEnd={handleSort}
+                    onDragOver={(e) => e.preventDefault()}
+                    className={`bg-white dark:bg-gray-800 border rounded-xl overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer ${esadmin ? 'cursor-grab active:cursor-grabbing' : ''} ${estaExpandida ? 'border-blue-500 dark:border-blue-500 ring-1 ring-blue-500' : 'border-gray-200 dark:border-gray-700'}`}
+                    onClick={() => setExpandidaId(estaExpandida ? null : noticia.idnoticia)}
+                  >
+                    <div className="p-5 flex justify-between items-start gap-4">
+                      <div className="flex gap-3 w-full">
+                        {esadmin && (
+                          <div className="text-gray-300 dark:text-gray-600 mt-1 cursor-grab" title="Arrastrar para ordenar">
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 6a2 2 0 11-4 0 2 2 0 014 0zM8 12a2 2 0 11-4 0 2 2 0 014 0zM8 18a2 2 0 11-4 0 2 2 0 014 0zM16 6a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 11-4 0 2 2 0 014 0zM16 18a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                          </div>
+                        )}
+                        <div className="w-full">
+                          <div className="flex justify-between items-start mb-1.5">
+                            <span className="text-[10px] md:text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block">
+                              {new Date(noticia.fechapublicacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+                            </span>
+                            
+                            {/* BOTONES DE EDICIÓN ADMIN */}
+                            {esadmin && (
+                              <div className="flex gap-1.5 relative z-10">
+                                <button onClick={(e) => abrirParaEditar(e, noticia)} className="cursor-pointer text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 p-1.5 rounded-lg transition-colors" title="Editar">
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                </button>
+                                <button onClick={(e) => borrarNoticia(e, noticia.idnoticia)} className="cursor-pointer text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition-colors" title="Borrar">
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          <h3 className={`text-base md:text-lg font-bold transition-colors pr-6 ${estaExpandida ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
+                            {noticia.titulo}
+                          </h3>
                         </div>
-                      )}
-                      <div className="w-full">
-                        <div className="flex justify-between items-start mb-1.5">
-                          <span className="text-[10px] md:text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block">
-                            {new Date(noticia.fechapublicacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
-                          </span>
-                          
-                          {/* BOTONES DE EDICIÓN ADMIN */}
-                          {esadmin && (
-                            <div className="flex gap-1.5 relative z-10">
-                              <button onClick={(e) => abrirParaEditar(e, noticia)} className="cursor-pointer text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 p-1.5 rounded-lg transition-colors" title="Editar">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                              </button>
-                              <button onClick={(e) => borrarNoticia(e, noticia.idnoticia)} className="cursor-pointer text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition-colors" title="Borrar">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        <h3 className={`text-base md:text-lg font-bold transition-colors pr-6 ${estaExpandida ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
-                          {noticia.titulo}
-                        </h3>
+                      </div>
+                      <div className={`text-gray-400 transition-transform duration-300 mt-1 ${estaExpandida ? 'rotate-180 text-blue-500' : ''}`}>
+                        <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </div>
                     </div>
-                    {/* Flecha de acordeón */}
-                    <div className={`text-gray-400 transition-transform duration-300 mt-1 ${estaExpandida ? 'rotate-180 text-blue-500' : ''}`}>
-                      <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                    </div>
-                  </div>
 
-                  {/* CONTENIDO EXPANDIDO */}
-                  {estaExpandida && (
-                    <div className="p-5 md:px-8 md:pb-6 border-t border-gray-100 dark:border-gray-700 animate-fade-in transition-colors bg-gray-50/50 dark:bg-gray-800/30">
-                      {noticia.imagenurl && (
-                        <div className="w-full mb-4 rounded-lg overflow-hidden shadow-sm">
-                          <img src={noticia.imagenurl} alt={noticia.titulo} className="w-full max-h-[300px] object-cover" />
+                    {estaExpandida && (
+                      <div className="p-5 md:px-8 md:pb-6 border-t border-gray-100 dark:border-gray-700 animate-fade-in transition-colors bg-gray-50/50 dark:bg-gray-800/30">
+                        {noticia.imagenurl && (
+                          <div className="w-full mb-4 rounded-lg overflow-hidden shadow-sm">
+                            <img src={noticia.imagenurl} alt={noticia.titulo} className="w-full max-h-[300px] object-cover" />
+                          </div>
+                        )}
+                        <div className="text-gray-600 dark:text-gray-300 text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+                          {noticia.descripcion}
                         </div>
-                      )}
-                      <div className="text-gray-600 dark:text-gray-300 text-sm md:text-base leading-relaxed whitespace-pre-wrap">
-                        {noticia.descripcion}
                       </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })
+                    )}
+                  </div>
+                )
+              })
+            )}
+          </div>
+
+          {totalPaginas > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8 pt-4 border-t border-gray-200 dark:border-gray-800">
+              <button 
+                onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+                disabled={paginaActual === 1}
+                className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all"
+              >
+                &lt; Anterior
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(num => (
+                  <button
+                    key={num}
+                    onClick={() => setPaginaActual(num)}
+                    className={`cursor-pointer w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                      paginaActual === num 
+                        ? 'bg-blue-600 text-white shadow-md' 
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+
+              <button 
+                onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+                disabled={paginaActual === totalPaginas}
+                className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all"
+              >
+                Siguiente &gt;
+              </button>
+            </div>
           )}
         </div>
 
-        {/* --- MODAL INTERNO DE EDICIÓN/CREACIÓN --- */}
+        {/* --- MODAL DE EDICIÓN/CREACIÓN --- */}
         {modalFormAbierto && (
           <div className="absolute inset-0 bg-white dark:bg-gray-900 z-20 flex flex-col transition-colors">
             <div className="p-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
