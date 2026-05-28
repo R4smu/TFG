@@ -104,7 +104,16 @@ export default function MisEntradas() {
   const indicePrimerItem = indiceUltimoItem - itemsPorPagina
   const entradasPaginadas = entradasProcesadas.slice(indicePrimerItem, indiceUltimoItem)
 
-  if (cargando) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white flex justify-center items-center">Buscando tus entradas...</div>
+  if (cargando) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center items-center transition-colors duration-300">
+        <img src="/rollopeli.gif" alt="Cargando" className="w-24 h-24 sm:w-32 sm:h-32 mb-4 drop-shadow-lg" />
+        <p className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-500 animate-pulse tracking-wide">
+          Buscando tus entradas...
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-8 transition-colors duration-300">

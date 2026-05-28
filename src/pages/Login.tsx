@@ -67,8 +67,19 @@ export default function Login() {
     }
   }
 
+  if (cargando) {
+    return (
+      <div className="flex flex-col items-center justify-center flex-grow p-4 w-full min-h-[60vh]">
+        <img src="/rollopeli.gif" alt="Cargando" className="w-24 h-24 sm:w-32 sm:h-32 mb-4 drop-shadow-lg" />
+        <p className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-500 animate-pulse tracking-wide">
+          {isLogin ? 'Iniciando sesión...' : 'Creando tu cuenta...'}
+        </p>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center flex-grow p-4 w-full">
+    <div className="flex flex-col items-center justify-center flex-grow p-4 w-full transition-colors duration-300">
       <AuthForm 
         isLogin={isLogin} 
         cargando={cargando} 

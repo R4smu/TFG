@@ -70,7 +70,17 @@ export default function Ticket() {
     }
   }, [cargando, ticket, searchParams])
 
-  if (cargando) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white flex justify-center items-center">Generando acceso al ticket...</div>
+  if (cargando) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center items-center transition-colors duration-300">
+        <img src="/rollopeli.gif" alt="Cargando" className="w-24 h-24 sm:w-32 sm:h-32 mb-4 drop-shadow-lg" />
+        <p className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-500 animate-pulse tracking-wide">
+          Generando acceso al ticket...
+        </p>
+      </div>
+    )
+  }  
+  
   if (!ticket) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white flex flex-col justify-center items-center gap-4"><p>El ticket solicitado no existe o ha caducado.</p><Link to="/" className="text-blue-500 underline">Volver a la cartelera</Link></div>
 
   const peli = Array.isArray(ticket.exhibicion.pelicula) ? ticket.exhibicion.pelicula[0] : ticket.exhibicion.pelicula;

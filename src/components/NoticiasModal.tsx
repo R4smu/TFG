@@ -182,7 +182,12 @@ export default function NoticiasModal({ onClose, esadmin }: NoticiasModalProps) 
         <div className="p-6 md:p-8 overflow-y-auto flex-1 bg-gray-50 dark:bg-gray-900/50 transition-colors flex flex-col">
           <div className="space-y-4 flex-1">
             {cargando ? (
-              <p className="text-center text-gray-500 py-10 text-base animate-pulse">Cargando noticias...</p>
+              <div className="flex flex-col justify-center items-center py-12">
+                <img src="/rollopeli.gif" alt="Cargando" className="w-16 h-16 mb-3 drop-shadow-sm opacity-80" />
+                <p className="text-sm font-bold text-blue-600 dark:text-blue-500 animate-pulse">
+                  Cargando noticias...
+                </p>
+              </div>
             ) : noticias.length === 0 ? (
               <div className="text-center py-10">
                 <p className="text-gray-500 text-base">No hay noticias publicadas en este momento.</p>

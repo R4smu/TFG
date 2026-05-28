@@ -109,8 +109,17 @@ export default function ConfiguracionUsuario() {
     }
   }
 
-  if (cargando) return <div className="text-gray-500 animate-pulse text-center p-8">Cargando tu configuración...</div>
-
+  if (cargando) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md p-12 flex flex-col justify-center items-center transition-colors w-full max-w-2xl mx-auto">
+        <img src="/rollopeli.gif" alt="Cargando" className="w-16 h-16 mb-4 drop-shadow-md" />
+        <p className="text-sm font-bold text-blue-600 dark:text-blue-500 animate-pulse tracking-wide">
+          Cargando tu configuración...
+        </p>
+      </div>
+    )
+  }
+  
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md p-8 transition-colors duration-300 w-full max-w-2xl mx-auto">
       <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Configuración de Perfil</h2>

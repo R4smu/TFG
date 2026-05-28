@@ -111,8 +111,17 @@ export default function GestorPeliculas() {
     else await cargarTodasLasPeliculas()
   }
 
-  if (cargando) return <div className="text-gray-500 dark:text-gray-400 p-8 text-center transition-colors">Cargando cartelera administrativa...</div>
-
+  if (cargando) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-20 flex flex-col justify-center items-center shadow-md transition-colors">
+        <img src="/rollopeli.gif" alt="Cargando" className="w-20 h-20 mb-4 drop-shadow-md" />
+        <p className="text-lg font-bold text-blue-600 dark:text-blue-500 animate-pulse tracking-wide">
+          Cargando cartelera administrativa...
+        </p>
+      </div>
+    )
+  }
+  
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-md transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
