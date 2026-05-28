@@ -18,7 +18,7 @@ interface Exhibicion {
   idsala: number;
   preciobase: number;
   descuento_porcentaje: number;
-  sala: { nombresala: string };
+  sala: any;
 }
 
 interface Asiento {
@@ -59,7 +59,22 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
       .order('fecha', { ascending: true })
       .order('horainicio', { ascending: true })
 
-    if (data) setExhibiciones(data as any)
+    if (data) {
+      const ahora = new Date();
+      
+      const exhibicionesFuturas = data.filter((ex: any) => {
+        const fechaSolo = ex.fecha.split('T')[0];
+        const [anio, mes, dia] = fechaSolo.split('-');
+        const [hora, minuto] = ex.horainicio.split(':');
+        
+        const fechaExhibicion = new Date(Number(anio), Number(mes) - 1, Number(dia), Number(hora), Number(minuto));
+        
+        return fechaExhibicion > ahora;
+      });
+
+      setExhibiciones(exhibicionesFuturas as any)
+    }
+    
     setCargandoSesiones(false)
   }
 
@@ -123,13 +138,11 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md transition-colors duration-300">
       <div className="bg-white dark:bg-gray-900 w-full max-w-5xl max-h-[90vh] rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col relative animate-fade-in text-gray-900 dark:text-white shadow-2xl transition-colors">
         
-        {/* Botón Cerrar */}
         <button onClick={onClose} className="absolute top-4 right-4 z-20 cursor-pointer bg-gray-100 dark:bg-black/50 hover:bg-red-500 hover:text-white dark:hover:bg-red-600 rounded-full p-2 transition-colors">
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
 
         <div className="overflow-y-auto">
-          {/* Header del Modal */}
           <div className="relative h-[200px] w-full">
             <img src={pelicula.posterurl} className="w-full h-full object-cover opacity-30 dark:opacity-20 blur-md" alt="" />
             <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-gray-900 to-transparent"></div>
@@ -143,7 +156,6 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
             </div>
           </div>
 
-          {/* Cuerpo del Modal */}
           <div className="p-8">
             {vistaModal === 'info' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -162,12 +174,17 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
               <div className="animate-fade-in">
                 <h2 className="text-xl font-bold text-blue-600 dark:text-blue-500 mb-6 uppercase tracking-wider text-sm">Sesiones Disponibles</h2>
                 {cargandoSesiones ? (
-                  <p className="text-gray-500 dark:text-gray-400 animate-pulse">Buscando horarios...</p>
+                  <div className="flex flex-col items-center justify-center py-10">
+                    <img src="/rollopeli.gif" alt="Cargando" className="w-16 h-16 mb-4 drop-shadow-md opacity-80" />
+                    <p className="text-gray-500 dark:text-gray-400 animate-pulse font-bold">Buscando horarios disponibles...</p>
+                  </div>
                 ) : exhibiciones.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {exhibiciones.map((ex) => {
                       const tieneDescuento = ex.descuento_porcentaje > 0;
                       const precioFinal = calcularPrecioFinal(ex.preciobase, ex.descuento_porcentaje);
+                      
+                      const nombreSala = Array.isArray(ex.sala) ? ex.sala[0]?.nombresala : ex.sala?.nombresala;
 
                       return (
                         <button key={ex.idexhibicion} onClick={() => seleccionarExhibicion(ex)} className="cursor-pointer bg-white dark:bg-gray-800 hover:border-blue-500 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 p-4 rounded-xl text-left transition-all shadow-sm">
@@ -175,7 +192,7 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
                           <div className="text-gray-900 dark:text-white text-sm font-medium">{new Date(ex.fecha).toLocaleDateString()}</div>
                           
                           <div className="text-gray-500 dark:text-gray-400 text-xs mt-2 uppercase flex items-center gap-1.5 flex-wrap">
-                            <span>{ex.sala.nombresala} •</span>
+                            <span>{nombreSala} •</span>
                             
                             {tieneDescuento ? (
                               <span className="flex items-center gap-1.5">
@@ -193,14 +210,13 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
                       )
                     })}
                   </div>
-                ) : <p className="text-gray-500 dark:text-gray-400 italic">No hay sesiones programadas.</p>}
+                ) : <p className="text-gray-500 dark:text-gray-400 italic">No hay sesiones futuras programadas para esta película.</p>}
               </div>
             )}
 
             {vistaModal === 'butacas' && exhibicionSeleccionada && (
               <div className="animate-fade-in flex flex-col lg:grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl p-8 flex flex-col items-center transition-colors">
-                  {/* Pantalla simulada */}
                   <div className="w-full max-w-sm h-1.5 bg-gray-300 dark:bg-blue-500 rounded-full mb-12 shadow-[0_4px_20px_rgba(59,130,246,0.3)]"></div>
                   
                   <div className="flex flex-col gap-3 overflow-x-auto w-full items-center py-4">
@@ -234,7 +250,6 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
                     ))}
                   </div>
 
-                  {/* Leyenda */}
                   <div className="flex gap-6 mt-8 text-xs font-bold text-gray-500 dark:text-gray-400">
                     <div className="flex items-center gap-2"><div className="w-3 h-3 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-800 rounded-sm"></div> Libre</div>
                     <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-600 rounded-sm"></div> Elegido</div>
