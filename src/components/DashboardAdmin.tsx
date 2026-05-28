@@ -117,7 +117,7 @@ export default function DashboardAdmin() {
         <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors flex flex-col justify-center relative overflow-hidden group">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-100 dark:bg-purple-900/20 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 pointer-events-none"></div>
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider relative z-10 flex items-center gap-2">
-            Mayor Éxito Comercial 🏆
+            Mayor Éxito Comercial
           </p>
           <p className="text-xl font-bold text-gray-900 dark:text-white mt-1 truncate relative z-10" title={totales.peliTop.titulo}>{totales.peliTop.titulo}</p>
           

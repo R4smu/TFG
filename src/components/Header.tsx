@@ -20,7 +20,21 @@ export default function Header({ session, nombreUsuario, avatarUrl, esadmin, onL
     <>
       <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 shrink-0 transition-colors duration-300">
         <div className="max-w-7xl mx-auto flex justify-between items-center text-gray-900 dark:text-white">
-          <Link to="/" className="text-2xl font-bold text-blue-600 dark:text-blue-500 tracking-tight">🎥 Novavista</Link>
+          <Link to="/" className="flex items-center group cursor-pointer select-none">
+            <span className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight transition-colors">
+              CINE
+            </span>
+  
+            <img 
+              src="/palomitacine.png" 
+              alt="Icono Cine" 
+              className="w-8 h-8 sm:w-10 sm:h-10 mx-2 object-contain drop-shadow-md group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300" 
+            />
+
+            <span className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-500 tracking-tight transition-colors">
+              NOVAVISTA
+            </span>
+          </Link>
           
           <div className="space-x-4 flex items-center">
             <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium text-sm">Cartelera</Link>
