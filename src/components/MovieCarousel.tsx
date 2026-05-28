@@ -22,15 +22,15 @@ export default function MovieCarousel({ peliculas, onVerDetalles, modalAbierto }
   const carruselRef = useRef<HTMLDivElement>(null)
   const intervaloRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // 1. MAGIA DEL BUCLE INFINITO
   const peliculasInfinitas = [...peliculas, ...peliculas, ...peliculas, ...peliculas, ...peliculas]
   
-  // 2. CONTROL DEL AUTO-PLAY
   const iniciarAutoPlay = useCallback(() => {
     if (intervaloRef.current) clearInterval(intervaloRef.current)
     intervaloRef.current = setInterval(() => {
-      if (carruselRef.current) carruselRef.current.scrollBy({ left: 304, behavior: 'smooth' })
-    }, 3000)
+      if (carruselRef.current) {
+        carruselRef.current.scrollLeft += 304 
+      }
+    }, 3500)
   }, [])
 
   const detenerAutoPlay = useCallback(() => {
@@ -44,7 +44,11 @@ export default function MovieCarousel({ peliculas, onVerDetalles, modalAbierto }
     if (peliculas.length > 0 && !modalAbierto) {
       iniciarAutoPlay()
       if (carruselRef.current && carruselRef.current.scrollLeft === 0) {
+        carruselRef.current.style.scrollBehavior = 'auto'
         carruselRef.current.scrollLeft = (peliculas.length * 304) * 2
+        setTimeout(() => {
+          if (carruselRef.current) carruselRef.current.style.scrollBehavior = 'smooth'
+        }, 50)
       }
     } else if (modalAbierto) {
       detenerAutoPlay()
@@ -52,29 +56,32 @@ export default function MovieCarousel({ peliculas, onVerDetalles, modalAbierto }
     return () => detenerAutoPlay()
   }, [peliculas, iniciarAutoPlay, detenerAutoPlay, modalAbierto])
 
-  // 3. VIGILANTE DE LOS SALTOS NINJA
   const handleScroll = () => {
     if (!carruselRef.current || peliculas.length === 0) return
     const anchoBloque = peliculas.length * 304
     const { scrollLeft } = carruselRef.current
+    
     if (scrollLeft <= anchoBloque) {
-      carruselRef.current.scrollTo({ left: scrollLeft + (anchoBloque * 2), behavior: 'auto' })
+      carruselRef.current.style.scrollBehavior = 'auto'
+      carruselRef.current.scrollLeft = scrollLeft + (anchoBloque * 2)
+      setTimeout(() => { if(carruselRef.current) carruselRef.current.style.scrollBehavior = 'smooth' }, 50)
     } else if (scrollLeft >= anchoBloque * 4) {
-      carruselRef.current.scrollTo({ left: scrollLeft - (anchoBloque * 2), behavior: 'auto' })
+      carruselRef.current.style.scrollBehavior = 'auto'
+      carruselRef.current.scrollLeft = scrollLeft - (anchoBloque * 2)
+      setTimeout(() => { if(carruselRef.current) carruselRef.current.style.scrollBehavior = 'smooth' }, 50)
     }
   }
 
-  // 4. FUNCIONES MANUALES
   const scrollIzquierda = () => {
     if (carruselRef.current) {
-      carruselRef.current.scrollBy({ left: -304, behavior: 'smooth' })
+      carruselRef.current.scrollLeft -= 304
       iniciarAutoPlay()
     }
   }
 
   const scrollDerecha = () => {
     if (carruselRef.current) {
-      carruselRef.current.scrollBy({ left: 304, behavior: 'smooth' })
+      carruselRef.current.scrollLeft += 304
       iniciarAutoPlay()
     }
   }
@@ -84,38 +91,43 @@ export default function MovieCarousel({ peliculas, onVerDetalles, modalAbierto }
   }
 
   return (
-    <div className="relative group transition-colors duration-300">
-      {/* Botón Izquierda - Adaptado: Blanco en modo claro, gris oscuro en dark */}
+    <div 
+      className="relative group transition-colors duration-300"
+      onMouseEnter={detenerAutoPlay}
+      onMouseLeave={() => { if (!modalAbierto) iniciarAutoPlay() }}
+    >
+      {/* Botón Izquierda */}
       <button 
         onClick={scrollIzquierda}
-        className="absolute left-0 top-1/2 -translate-y-1/2 -ml-5 z-20 bg-white/90 dark:bg-gray-800/90 hover:bg-blue-600 dark:hover:bg-blue-600 text-gray-800 dark:text-white w-12 h-12 flex items-center justify-center rounded-full shadow-xl border border-gray-200 dark:border-gray-600 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+        className="absolute left-0 top-1/2 -translate-y-1/2 -ml-5 z-20 cursor-pointer bg-white/90 dark:bg-gray-800/90 hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white dark:hover:text-white text-gray-800 dark:text-white w-12 h-12 flex items-center justify-center rounded-full shadow-xl border border-gray-200 dark:border-gray-600 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
         </svg>
       </button>
 
-      {/* Contenedor del Carrusel */}
+      {/* Contenedor Carrusel */}
       <div 
         ref={carruselRef} 
         onScroll={handleScroll} 
-        className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 pt-4 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-8 pt-4 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         {peliculasInfinitas.map((pelicula, index) => (
-          <MovieCard 
-            key={`${pelicula.idpelicula}-${index}`}
-            pelicula={pelicula}
-            onMouseEnter={detenerAutoPlay}
-            onMouseLeave={() => { if (!modalAbierto) iniciarAutoPlay() }}
-            onVerDetalles={onVerDetalles}
-          />
+          <div key={`${pelicula.idpelicula}-${index}`} className="snap-start shrink-0">
+            <MovieCard 
+              pelicula={pelicula}
+              onMouseEnter={() => {}} 
+              onMouseLeave={() => {}}
+              onVerDetalles={onVerDetalles}
+            />
+          </div>
         ))}
       </div>
 
-      {/* Botón Derecha - Adaptado */}
+      {/* Botón Derecha */}
       <button 
         onClick={scrollDerecha}
-        className="absolute right-0 top-1/2 -translate-y-1/2 -mr-5 z-20 bg-white/90 dark:bg-gray-800/90 hover:bg-blue-600 dark:hover:bg-blue-600 text-gray-800 dark:text-white w-12 h-12 flex items-center justify-center rounded-full shadow-xl border border-gray-200 dark:border-gray-600 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+        className="absolute right-0 top-1/2 -translate-y-1/2 -mr-5 z-20 cursor-pointer bg-white/90 dark:bg-gray-800/90 hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white dark:hover:text-white text-gray-800 dark:text-white w-12 h-12 flex items-center justify-center rounded-full shadow-xl border border-gray-200 dark:border-gray-600 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
           <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
