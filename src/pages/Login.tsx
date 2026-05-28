@@ -40,7 +40,7 @@ export default function Login() {
           throw new Error("La contraseña no cumple con los requisitos de seguridad mínimos.");
         }
 
-        const { data, error: errorAuth } = await supabase.auth.signUp({ 
+        const { error: errorAuth } = await supabase.auth.signUp({ 
           email, 
           password,
           options: {
@@ -53,12 +53,8 @@ export default function Login() {
 
         if (errorAuth) throw new Error(errorAuth.message)
 
-        if (!data.session) {
-          alert("¡Registro casi completado! Revisa tu bandeja de entrada (y la carpeta de SPAM) para confirmar tu cuenta.")
-          setIsLogin(true)
-        } else {
-          navigate('/perfil') 
-        }
+        alert("¡Registro completado con éxito!")
+        navigate('/') 
       }
     } catch (err: any) {
       setError(err.message)
