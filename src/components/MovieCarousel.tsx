@@ -21,17 +21,81 @@ interface MovieCarouselProps {
 export default function MovieCarousel({ peliculas, onVerDetalles, modalAbierto }: MovieCarouselProps) {
   const carruselRef = useRef<HTMLDivElement>(null)
   const intervaloRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const animandoRef = useRef(false)
 
   const peliculasInfinitas = [...peliculas, ...peliculas, ...peliculas, ...peliculas, ...peliculas]
-  
+
+  const obtenerAnchoTarjeta = useCallback(() => {
+    if (!carruselRef.current || carruselRef.current.children.length === 0) return 304;
+    const tarjeta = carruselRef.current.children[0] as HTMLElement;
+    const estilos = window.getComputedStyle(carruselRef.current);
+    const gap = parseFloat(estilos.gap) || 24; // 24px = gap-6
+    return tarjeta.offsetWidth + gap;
+  }, []);
+
+  const verificarSaltosInfinitos = useCallback(() => {
+    if (!carruselRef.current || peliculas.length === 0) return;
+    
+    const el = carruselRef.current;
+    const anchoBloque = peliculas.length * obtenerAnchoTarjeta();
+    const scrollActual = el.scrollLeft;
+    
+    if (scrollActual <= anchoBloque) {
+      el.style.scrollSnapType = 'none';
+      el.scrollLeft = scrollActual + (anchoBloque * 2);
+      void el.offsetWidth;
+      el.style.scrollSnapType = 'x mandatory';
+    } else if (scrollActual >= anchoBloque * 4) {
+      el.style.scrollSnapType = 'none';
+      el.scrollLeft = scrollActual - (anchoBloque * 2);
+      void el.offsetWidth;
+      el.style.scrollSnapType = 'x mandatory';
+    }
+  }, [peliculas.length, obtenerAnchoTarjeta]);
+
+
+  const animarDesplazamiento = useCallback((direccion: 1 | -1) => {
+    if (!carruselRef.current || animandoRef.current) return;
+    
+    const el = carruselRef.current;
+    const anchoDesplazamiento = obtenerAnchoTarjeta();
+    
+    animandoRef.current = true;
+    el.style.scrollSnapType = 'none';
+    el.style.scrollBehavior = 'auto';
+
+    const posicionInicial = el.scrollLeft;
+    const distanciaFinal = anchoDesplazamiento * direccion;
+    const duracionAnimacion = 500;
+    let tiempoInicio: number | null = null;
+
+    const pasoAnimacion = (tiempoActual: number) => {
+      if (tiempoInicio === null) tiempoInicio = tiempoActual;
+      const tiempoTranscurrido = tiempoActual - tiempoInicio;
+      const progreso = Math.min(tiempoTranscurrido / duracionAnimacion, 1);
+      
+      const curvaSuave = progreso < 0.5 ? 2 * progreso * progreso : 1 - Math.pow(-2 * progreso + 2, 2) / 2;
+      
+      el.scrollLeft = posicionInicial + (distanciaFinal * curvaSuave);
+
+      if (progreso < 1) {
+        requestAnimationFrame(pasoAnimacion);
+      } else {
+        el.style.scrollSnapType = 'x mandatory';
+        animandoRef.current = false;
+        verificarSaltosInfinitos();
+      }
+    };
+
+    requestAnimationFrame(pasoAnimacion);
+  }, [obtenerAnchoTarjeta, verificarSaltosInfinitos]);
+
   const iniciarAutoPlay = useCallback(() => {
     if (intervaloRef.current) clearInterval(intervaloRef.current)
     intervaloRef.current = setInterval(() => {
-      if (carruselRef.current) {
-        carruselRef.current.scrollLeft += 304 
-      }
+      animarDesplazamiento(1)
     }, 3500)
-  }, [])
+  }, [animarDesplazamiento])
 
   const detenerAutoPlay = useCallback(() => {
     if (intervaloRef.current) { 
@@ -43,47 +107,34 @@ export default function MovieCarousel({ peliculas, onVerDetalles, modalAbierto }
   useEffect(() => {
     if (peliculas.length > 0 && !modalAbierto) {
       iniciarAutoPlay()
+      
       if (carruselRef.current && carruselRef.current.scrollLeft === 0) {
-        carruselRef.current.style.scrollBehavior = 'auto'
-        carruselRef.current.scrollLeft = (peliculas.length * 304) * 2
-        setTimeout(() => {
-          if (carruselRef.current) carruselRef.current.style.scrollBehavior = 'smooth'
-        }, 50)
+        const el = carruselRef.current
+        el.style.scrollSnapType = 'none';
+        el.scrollLeft = (peliculas.length * obtenerAnchoTarjeta()) * 2;
+        void el.offsetWidth;
+        el.style.scrollSnapType = 'x mandatory';
       }
-    } else if (modalAbierto) {
+    } else {
       detenerAutoPlay()
     }
     return () => detenerAutoPlay()
-  }, [peliculas, iniciarAutoPlay, detenerAutoPlay, modalAbierto])
+  }, [peliculas, iniciarAutoPlay, detenerAutoPlay, modalAbierto, obtenerAnchoTarjeta])
 
-  const handleScroll = () => {
-    if (!carruselRef.current || peliculas.length === 0) return
-    const anchoBloque = peliculas.length * 304
-    const { scrollLeft } = carruselRef.current
-    
-    if (scrollLeft <= anchoBloque) {
-      carruselRef.current.style.scrollBehavior = 'auto'
-      carruselRef.current.scrollLeft = scrollLeft + (anchoBloque * 2)
-      setTimeout(() => { if(carruselRef.current) carruselRef.current.style.scrollBehavior = 'smooth' }, 50)
-    } else if (scrollLeft >= anchoBloque * 4) {
-      carruselRef.current.style.scrollBehavior = 'auto'
-      carruselRef.current.scrollLeft = scrollLeft - (anchoBloque * 2)
-      setTimeout(() => { if(carruselRef.current) carruselRef.current.style.scrollBehavior = 'smooth' }, 50)
+  const handleScrollManual = () => {
+    if (!animandoRef.current) {
+      verificarSaltosInfinitos();
     }
   }
 
   const scrollIzquierda = () => {
-    if (carruselRef.current) {
-      carruselRef.current.scrollLeft -= 304
-      iniciarAutoPlay()
-    }
+    animarDesplazamiento(-1);
+    iniciarAutoPlay();
   }
 
   const scrollDerecha = () => {
-    if (carruselRef.current) {
-      carruselRef.current.scrollLeft += 304
-      iniciarAutoPlay()
-    }
+    animarDesplazamiento(1);
+    iniciarAutoPlay();
   }
 
   if (peliculas.length === 0) {
@@ -93,7 +144,7 @@ export default function MovieCarousel({ peliculas, onVerDetalles, modalAbierto }
   return (
     <div 
       className="relative group transition-colors duration-300"
-      onMouseEnter={detenerAutoPlay}
+      onMouseEnter={detenerAutoPlay} 
       onMouseLeave={() => { if (!modalAbierto) iniciarAutoPlay() }}
     >
       {/* Botón Izquierda */}
@@ -106,11 +157,11 @@ export default function MovieCarousel({ peliculas, onVerDetalles, modalAbierto }
         </svg>
       </button>
 
-      {/* Contenedor Carrusel */}
+      {/* Contenedor del Carrusel */}
       <div 
         ref={carruselRef} 
-        onScroll={handleScroll} 
-        className="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-8 pt-4 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        onScroll={handleScrollManual} 
+        className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 pt-4 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         {peliculasInfinitas.map((pelicula, index) => (
           <div key={`${pelicula.idpelicula}-${index}`} className="snap-start shrink-0">
