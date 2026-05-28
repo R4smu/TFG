@@ -9,6 +9,7 @@ interface Pelicula {
   duracion: number;
   posterurl: string;
   sinopsis: string;
+  trailerurl: string;
 }
 
 interface Exhibicion {
@@ -161,6 +162,21 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
                 <div className="md:col-span-2">
                   <h2 className="text-xl font-bold text-blue-600 dark:text-blue-500 mb-4 uppercase tracking-wider text-sm">Sinopsis</h2>
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{pelicula.sinopsis}</p>
+                  
+                  {pelicula.trailerurl && (
+                    <div className="mt-6">
+                      <a 
+                        href={pelicula.trailerurl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-500 font-bold rounded-lg transition-colors border border-red-200 dark:border-red-500/30"
+                      >
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                        Ver Tráiler Oficial
+                      </a>
+                    </div>
+                  )}
+
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 h-fit transition-colors">
                   <h3 className="font-bold mb-4 text-gray-900 dark:text-white">¿Quieres verla?</h3>
