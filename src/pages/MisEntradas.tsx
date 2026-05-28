@@ -14,6 +14,8 @@ export default function MisEntradas() {
   const [ordenAscendente, setOrdenAscendente] = useState(false)
   const [filtroEstado, setFiltroEstado] = useState<'todas' | 'activas' | 'historial'>('todas')
 
+  const [animarTarjetas, setAnimarTarjetas] = useState(false)
+
   useEffect(() => {
     const cargarMisEntradas = async () => {
       setCargando(true)
@@ -89,7 +91,12 @@ export default function MisEntradas() {
     setPaginaActual(1)
   }, [filtroTexto, ordenarPor, ordenAscendente, filtroEstado])
 
-  // LÓGICA DE PAGINACIÓN
+  useEffect(() => {
+    setAnimarTarjetas(false)
+    const timer = setTimeout(() => setAnimarTarjetas(true), 50)
+    return () => clearTimeout(timer)
+  }, [paginaActual, filtroTexto, ordenarPor, ordenAscendente, filtroEstado, cargando])
+
   const totalPaginas = Math.ceil(entradasProcesadas.length / itemsPorPagina)
   if (paginaActual > totalPaginas && totalPaginas > 0) setPaginaActual(totalPaginas)
 
@@ -117,10 +124,7 @@ export default function MisEntradas() {
           </div>
         ) : (
           <>
-            {/* BARRA DE BÚSQUEDA Y ORDENACIÓN */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
-              
-              {/* Buscador */}
               <div className="relative w-full md:w-1/3">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -134,10 +138,7 @@ export default function MisEntradas() {
                 />
               </div>
 
-              {/* Filtros */}
               <div className="flex flex-wrap w-full md:w-auto gap-2">
-                
-                {/* Selector de Estado */}
                 <select 
                   value={filtroEstado} 
                   onChange={(e) => setFiltroEstado(e.target.value as any)}
@@ -148,7 +149,6 @@ export default function MisEntradas() {
                   <option value="historial">Historial (Finalizadas/Canceladas)</option>
                 </select>
 
-                {/* Selector de Ordenación */}
                 <select 
                   value={ordenarPor} 
                   onChange={(e) => setOrdenarPor(e.target.value as any)}
@@ -169,10 +169,8 @@ export default function MisEntradas() {
                   </svg>
                 </button>
               </div>
-
             </div>
 
-            {/* GRID DE ENTRADAS PAGINADO */}
             {entradasProcesadas.length === 0 ? (
               <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center transition-colors mt-6">
                 <p className="text-gray-500 dark:text-gray-400">No hay entradas que coincidan con tus filtros.</p>
@@ -182,7 +180,7 @@ export default function MisEntradas() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {entradasPaginadas.map(entrada => {
+                {entradasPaginadas.map((entrada, index) => {
                   const peli = Array.isArray(entrada.exhibicion.pelicula) ? entrada.exhibicion.pelicula[0] : entrada.exhibicion.pelicula;
                   
                   const fechaSolo = entrada.exhibicion.fecha.split('T')[0];
@@ -199,49 +197,53 @@ export default function MisEntradas() {
                   const esActiva = !haCaducado && !esCanceladaDB;
 
                   return (
-                    <Link 
-                      to={`/ticket/${entrada.identrada}`} 
+                    <div 
                       key={entrada.identrada}
-                      className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-xl hover:border-blue-500 dark:hover:border-blue-500 transition-all flex h-40 relative"
+                      className={`transform transition-all duration-700 ease-out fill-mode-forwards ${animarTarjetas ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}
+                      style={{ transitionDelay: `${index * 100}ms` }}
                     >
-                      {/* Póster */}
-                      <div className="w-28 shrink-0 relative overflow-hidden">
-                        <img src={peli.posterurl} alt="Poster" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        
-                        {/* Sello de Estado */}
-                        {!esActiva && (
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-10">
-                            <span className="text-white text-[10px] sm:text-xs font-bold uppercase tracking-widest rotate-[-45deg] bg-red-600 px-3 py-1 whitespace-nowrap shadow-md">
-                              {esCanceladaDB ? 'Cancelada' : 'Finalizada'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                      <Link 
+                        to={`/ticket/${entrada.identrada}`} 
+                        className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-xl hover:border-blue-500 dark:hover:border-blue-500 transition-all flex h-40 relative"
+                      >
+                        {/* Póster */}
+                        <div className="w-28 shrink-0 relative overflow-hidden">
+                          <img src={peli.posterurl} alt="Poster" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          
+                          {!esActiva && (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-10">
+                              <span className="text-white text-[10px] sm:text-xs font-bold uppercase tracking-widest rotate-[-45deg] bg-red-600 px-3 py-1 whitespace-nowrap shadow-md">
+                                {esCanceladaDB ? 'Cancelada' : 'Finalizada'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
 
-                      {/* Contenido de la Tarjeta */}
-                      <div className={`p-4 flex flex-col justify-between flex-1 min-w-0 ${!esActiva ? 'opacity-60' : ''}`}>
-                        <div>
-                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded inline-block mb-1.5 ${
-                            esActiva 
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                              : esCanceladaDB 
-                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                          }`}>
-                            {esActiva ? (entrada.estado || 'Activa') : haCaducado ? 'Historial' : entrada.estado}
-                          </span>
-                          <h3 className="font-bold text-gray-900 dark:text-white truncate text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{peli.titulo}</h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {new Date(entrada.exhibicion.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'long' })} • {entrada.exhibicion.horainicio.substring(0, 5)}
-                          </p>
+                        {/* Contenido de la Tarjeta */}
+                        <div className={`p-4 flex flex-col justify-between flex-1 min-w-0 ${!esActiva ? 'opacity-60' : ''}`}>
+                          <div>
+                            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded inline-block mb-1.5 ${
+                              esActiva 
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                                : esCanceladaDB 
+                                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                  : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                            }`}>
+                              {esActiva ? (entrada.estado || 'Activa') : haCaducado ? 'Historial' : entrada.estado}
+                            </span>
+                            <h3 className="font-bold text-gray-900 dark:text-white truncate text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{peli.titulo}</h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {new Date(entrada.exhibicion.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'long' })} • {entrada.exhibicion.horainicio.substring(0, 5)}
+                            </p>
+                          </div>
+                          
+                          <div className="flex justify-between items-end">
+                            <span className="text-sm font-black text-blue-600 dark:text-blue-400">{entrada.preciofinal}€</span>
+                            <span className="text-[10px] font-mono text-gray-400">#NV-{entrada.identrada}</span>
+                          </div>
                         </div>
-                        
-                        <div className="flex justify-between items-end">
-                          <span className="text-sm font-black text-blue-600 dark:text-blue-400">{entrada.preciofinal}€</span>
-                          <span className="text-[10px] font-mono text-gray-400">#NV-{entrada.identrada}</span>
-                        </div>
-                      </div>
-                    </Link>
+                      </Link>
+                    </div>
                   )
                 })}
               </div>
