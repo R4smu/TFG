@@ -127,7 +127,16 @@ export default function GestorUsuarios() {
     else cargarUsuarios()
   }
 
-  if (cargando) return <div className="text-gray-500 p-4 text-center">Cargando lista de usuarios...</div>
+  if (cargando) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-20 flex flex-col justify-center items-center shadow-md transition-colors">
+        <img src="/rollopeli.gif" alt="Cargando" className="w-20 h-20 mb-4 drop-shadow-md" />
+        <p className="text-lg font-bold text-blue-600 dark:text-blue-500 animate-pulse tracking-wide">
+          Cargando usuarios...
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-md transition-colors duration-300">
@@ -141,43 +150,45 @@ export default function GestorUsuarios() {
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-inner">
+        <table className="w-full text-left border-collapse min-w-max">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 text-sm uppercase tracking-wider">
-              <th className="p-4 font-semibold">Usuario</th>
-              <th className="p-4 font-semibold">Teléfono</th>
-              <th className="p-4 font-semibold">Rol</th>
-              <th className="p-4 font-semibold">Estado</th>
-              <th className="p-4 text-right font-semibold">Acciones</th>
+              <th className="p-4 font-semibold whitespace-nowrap">Usuario</th>
+              <th className="p-4 font-semibold whitespace-nowrap">Teléfono</th>
+              <th className="p-4 font-semibold whitespace-nowrap">Rol</th>
+              <th className="p-4 font-semibold whitespace-nowrap">Estado</th>
+              <th className="p-4 text-right font-semibold whitespace-nowrap">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
             {usuariosPaginados.map(u => (
               <tr key={u.idusuario} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors bg-white dark:bg-transparent">
-                <td className="p-4">
+                <td className="p-4 whitespace-nowrap">
                   <p className="font-bold text-gray-900 dark:text-white">{u.nombre}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{u.email}</p>
                 </td>
-                <td className="p-4 text-gray-700 dark:text-gray-300">{u.telefono || '—'}</td>
-                <td className="p-4">
+                <td className="p-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">{u.telefono || '—'}</td>
+                <td className="p-4 whitespace-nowrap">
                   <span className={`px-2 py-0.5 rounded text-xs font-bold ${u.esadmin ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
                     {u.esadmin ? 'Admin' : 'Cliente'}
                   </span>
                 </td>
-                <td className="p-4">
+                <td className="p-4 whitespace-nowrap">
                   <span className={`px-2 py-0.5 rounded text-xs font-bold ${u.alta ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'}`}>
                     {u.alta ? 'Activo (Alta)' : 'Inactivo (Baja)'}
                   </span>
                 </td>
-                <td className="p-4 text-right space-x-2">
-                  <button onClick={() => abrirModalEditar(u)} className="cursor-pointer bg-blue-100 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400 hover:bg-blue-600 hover:text-white px-3 py-1 rounded font-medium transition-colors">Editar</button>
-                  <button 
-                    onClick={() => alternarAltaBaja(u)} 
-                    className={`cursor-pointer px-3 py-1 rounded font-medium transition-colors ${u.alta ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 hover:bg-red-600 hover:text-white' : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 hover:bg-green-600 hover:text-white'}`}
-                  >
-                    {u.alta ? 'Dar de Baja' : 'Activar'}
-                  </button>
+                <td className="p-4">
+                  <div className="flex justify-end items-center gap-2">
+                    <button onClick={() => abrirModalEditar(u)} className="cursor-pointer bg-blue-100 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded font-medium transition-colors">Editar</button>
+                    <button 
+                      onClick={() => alternarAltaBaja(u)} 
+                      className={`cursor-pointer px-3 py-1.5 rounded font-medium transition-colors ${u.alta ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 hover:bg-red-600 hover:text-white' : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 hover:bg-green-600 hover:text-white'}`}
+                    >
+                      {u.alta ? 'Dar de Baja' : 'Activar'}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -185,7 +196,6 @@ export default function GestorUsuarios() {
         </table>
       </div>
 
-      {/* BOTONERA DE PAGINACIÓN */}
       {totalPaginas > 1 && (
         <div className="flex items-center justify-center gap-2 mt-6">
           <button onClick={() => setPaginaActual(p => Math.max(1, p - 1))} disabled={paginaActual === 1} className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all">
@@ -216,7 +226,7 @@ export default function GestorUsuarios() {
             
             <form onSubmit={guardarUsuario} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Nombre Completo</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Nombre</label>
                 <input required name="nombre" value={usuarioSeleccionado.nombre || ''} onChange={manejarCambioInput} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500" />
               </div>
               
@@ -240,7 +250,7 @@ export default function GestorUsuarios() {
               <div>
                 <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Rol en el sistema</label>
                 <select name="esadmin" value={usuarioSeleccionado.esadmin ? 'true' : 'false'} onChange={(e) => setUsuarioSeleccionado({...usuarioSeleccionado, esadmin: e.target.value === 'true'})} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
-                  <option value="false">Cliente (Usuario estándar)</option>
+                  <option value="false">Cliente</option>
                   <option value="true">Administrador</option>
                 </select>
               </div>

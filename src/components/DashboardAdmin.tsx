@@ -241,7 +241,7 @@ export default function DashboardAdmin() {
                         {peli.titulo}
                       </span>
                     </div>
-                    <span className="text-gray-500 font-bold shrink-0">{peli.entradas_compradas} tkts</span>
+                    <span className="text-gray-500 font-bold shrink-0">{peli.entradas_compradas} tickets</span>
                   </div>
                 ))}
               </div>

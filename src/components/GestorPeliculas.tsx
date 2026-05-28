@@ -105,7 +105,7 @@ export default function GestorPeliculas() {
   }
 
   const eliminarPelicula = async (id: number) => {
-    if (!window.confirm("⚠️ ADVERTENCIA: ¿Estás seguro de ELIMINAR por completo esta película? Esto borrará físicamente sus horarios y puede romper el historial de entradas vendidas.")) return
+    if (!window.confirm("ADVERTENCIA: ¿Estás seguro de ELIMINAR por completo esta película? Esto borrará físicamente sus horarios y puede romper el historial de entradas vendidas.")) return
     const { error } = await supabase.from('pelicula').delete().eq('idpelicula', id)
     if (error) alert("Error al eliminar: " + error.message)
     else await cargarTodasLasPeliculas()
@@ -134,51 +134,55 @@ export default function GestorPeliculas() {
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-inner transition-colors">
+        <table className="w-full text-left border-collapse min-w-max">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 text-sm uppercase tracking-wider transition-colors">
-              <th className="p-4 rounded-tl-lg font-semibold">Película</th>
-              <th className="p-4 font-semibold">Género / Duración</th>
-              <th className="p-4 font-semibold text-center">Estado</th>
-              <th className="p-4 text-right rounded-tr-lg font-semibold">Acciones</th>
+              <th className="p-4 rounded-tl-lg font-semibold whitespace-nowrap">Película</th>
+              <th className="p-4 font-semibold whitespace-nowrap">Género / Duración</th>
+              <th className="p-4 font-semibold text-center whitespace-nowrap">Estado</th>
+              <th className="p-4 text-right rounded-tr-lg font-semibold whitespace-nowrap">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-sm transition-colors">
             {peliculasPaginadas.map(pelicula => (
               <tr key={pelicula.idpelicula} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors bg-white dark:bg-transparent ${!pelicula.activa ? 'opacity-50 bg-gray-50 dark:bg-gray-900/10' : ''}`}>
-                <td className="p-4 flex items-center gap-4">
-                  <img src={pelicula.posterurl} alt="poster" className="w-10 h-14 object-cover rounded shadow border border-gray-200 dark:border-gray-700" />
-                  <div>
-                    <p className="font-bold text-gray-900 dark:text-white transition-colors">{pelicula.titulo}</p>
-                    <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 mr-2 border border-gray-200 dark:border-transparent transition-colors">{pelicula.clasificacionedad}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 transition-colors">Hasta: {new Date(pelicula.fechasalida).toLocaleDateString()}</span>
+                <td className="p-4">
+                  <div className="flex items-center gap-4 w-max">
+                    <img src={pelicula.posterurl} alt="poster" className="w-10 h-14 object-cover rounded shadow border border-gray-200 dark:border-gray-700 shrink-0" />
+                    <div>
+                      <p className="font-bold text-gray-900 dark:text-white transition-colors">{pelicula.titulo}</p>
+                      <div className="mt-1">
+                        <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 mr-2 border border-gray-200 dark:border-transparent transition-colors">{pelicula.clasificacionedad}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 transition-colors">Hasta: {new Date(pelicula.fechasalida).toLocaleDateString()}</span>
+                      </div>
+                    </div>
                   </div>
                 </td>
-                <td className="p-4 text-gray-700 dark:text-gray-300 transition-colors">{pelicula.genero}<br/><span className="text-gray-500">{pelicula.duracion} min</span></td>
+                <td className="p-4 text-gray-700 dark:text-gray-300 transition-colors whitespace-nowrap">{pelicula.genero}<br/><span className="text-gray-500">{pelicula.duracion} min</span></td>
                 
-                {/* COLUMNA VISUAL DEL ESTADO */}
-                <td className="p-4 text-center">
+                <td className="p-4 text-center whitespace-nowrap">
                   <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${pelicula.activa ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
                     {pelicula.activa ? 'En Cartelera' : 'De Baja'}
                   </span>
                 </td>
 
-                <td className="p-4 text-right space-x-2">
-                  {pelicula.activa && (
-                    <button onClick={() => setPeliculaParaExhibiciones(pelicula)} className="bg-purple-100 dark:bg-purple-600/20 text-purple-700 dark:text-purple-400 hover:bg-purple-600 hover:text-white px-3 py-1 rounded transition-colors font-medium cursor-pointer">Sesiones</button>
-                  )}
-                  <button onClick={() => abrirModalEditar(pelicula)} className="bg-blue-100 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400 hover:bg-blue-600 hover:text-white px-3 py-1 rounded transition-colors font-medium cursor-pointer">Editar</button>
-                  
-                  {/* BOTÓN PARA ALTERNAR ALTA/BAJA */}
-                  <button 
-                    onClick={() => alternarEstadoPelicula(pelicula)} 
-                    className={`px-3 py-1 rounded transition-colors font-medium cursor-pointer ${pelicula.activa ? 'bg-orange-100 text-orange-700 hover:bg-orange-600 hover:text-white dark:bg-orange-900/20 dark:text-orange-400' : 'bg-green-100 text-green-700 hover:bg-green-600 hover:text-white dark:bg-green-900/20 dark:text-green-400'}`}
-                  >
-                    {pelicula.activa ? 'Dar de Baja' : 'Dar de Alta'}
-                  </button>
+                <td className="p-4">
+                  <div className="flex justify-end items-center gap-2">
+                    {pelicula.activa && (
+                      <button onClick={() => setPeliculaParaExhibiciones(pelicula)} className="bg-purple-100 dark:bg-purple-600/20 text-purple-700 dark:text-purple-400 hover:bg-purple-600 hover:text-white px-3 py-1.5 rounded transition-colors font-medium cursor-pointer">Sesiones</button>
+                    )}
+                    <button onClick={() => abrirModalEditar(pelicula)} className="bg-blue-100 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded transition-colors font-medium cursor-pointer">Editar</button>
+                    
+                    <button 
+                      onClick={() => alternarEstadoPelicula(pelicula)} 
+                      className={`px-3 py-1.5 rounded transition-colors font-medium cursor-pointer ${pelicula.activa ? 'bg-orange-100 text-orange-700 hover:bg-orange-600 hover:text-white dark:bg-orange-900/20 dark:text-orange-400' : 'bg-green-100 text-green-700 hover:bg-green-600 hover:text-white dark:bg-green-900/20 dark:text-green-400'}`}
+                    >
+                      {pelicula.activa ? 'Dar de Baja' : 'Dar de Alta'}
+                    </button>
 
-                  <button onClick={() => eliminarPelicula(pelicula.idpelicula)} className="bg-red-100 dark:bg-red-600/20 text-red-700 dark:text-red-400 hover:bg-red-600 hover:text-white px-3 py-1 rounded transition-colors font-medium cursor-pointer" title="Eliminar definitivamente">✕</button>
+                    <button onClick={() => eliminarPelicula(pelicula.idpelicula)} className="bg-red-100 dark:bg-red-600/20 text-red-700 dark:text-red-400 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded transition-colors font-medium cursor-pointer" title="Eliminar definitivamente">✕</button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -186,7 +190,6 @@ export default function GestorPeliculas() {
         </table>
       </div>
 
-      {/* BOTONERA DE PAGINACIÓN */}
       {totalPaginas > 1 && (
         <div className="flex items-center justify-center gap-2 mt-6">
           <button onClick={() => setPaginaActual(p => Math.max(1, p - 1))} disabled={paginaActual === 1} className="cursor-pointer px-3 py-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:no-underline transition-all">
@@ -205,7 +208,6 @@ export default function GestorPeliculas() {
         </div>
       )}
 
-      {/* MODAL DE CREACIÓN / EDICIÓN */}
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 dark:bg-black/80 backdrop-blur-sm transition-colors">
           <div className="bg-white dark:bg-gray-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl transition-colors">
