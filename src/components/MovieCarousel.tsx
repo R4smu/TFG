@@ -8,8 +8,9 @@ interface Pelicula {
   duracion: number;
   posterurl: string;
   sinopsis: string;
-  director: string;
-  clasificacionedad: string;
+  clasificacionedad?: string;
+  trailerurl?: string; 
+  director?: string; 
 }
 
 interface MovieCarouselProps {

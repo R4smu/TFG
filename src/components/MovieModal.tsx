@@ -9,7 +9,9 @@ interface Pelicula {
   duracion: number;
   posterurl: string;
   sinopsis: string;
-  trailerurl: string;
+  clasificacionedad?: string;
+  trailerurl?: string; 
+  director?: string; 
 }
 
 interface Exhibicion {
