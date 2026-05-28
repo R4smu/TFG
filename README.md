@@ -128,7 +128,7 @@ Inicia la aplicación en modo local con npm run dev en la terminal dentro de la 
 
 
 # 📈 Trayectoría y evolución del proyecto
-Etapa de Planificación y Diseño<br>
+### Etapa de Planificación y Diseño<br>
 > Primeros conceptos, diseño de la arquitectura orientada a la venta de entradas y demás.
 
 **07/10/2025** · Creación de la identidad visual: Desarrollo de la marca Cine Novavista, diseño de un logotipo con estética neo-retro y definición de la paleta de colores para la interfaz en modo oscuro.
@@ -151,7 +151,7 @@ Etapa de Planificación y Diseño<br>
 
 **16/12/2025** · Cierre de Fase 1: Revisión global del planteamiento y validación final antes de iniciar la programación del Frontend (catálogo) y Backend (lógica de ventas).<br>
 
-Etapa de Desarrollo y Despliegue<br>
+### Etapa de Desarrollo y Despliegue<br>
 > Realización del código, integración de pasarelas y pruebas con varias demos.
 
 **13/01/2026** · Presentación del primer prototipo funcional: Exhibición de la landing page dinámica, mostrando la cartelera en tiempo real y el carrusel de estrenos.
