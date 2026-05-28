@@ -10,6 +10,7 @@ interface DatosDiarios {
 interface DatosTopPeliculas {
   titulo: string;
   entradas_compradas: number;
+  dinero_recaudado?: number;
 }
 
 export default function DashboardAdmin() {
@@ -17,7 +18,15 @@ export default function DashboardAdmin() {
   const [topPeliculas, setTopPeliculas] = useState<DatosTopPeliculas[]>([])
   const [cargando, setCargando] = useState(true)
 
-  const [totales, setTotales] = useState({ ingresos: 0, entradas: 0, peliTop: '—' })
+  const [animarGraficas, setAnimarGraficas] = useState(false)
+
+  const [totales, setTotales] = useState({ 
+    ingresos: 0, 
+    entradas: 0, 
+    peliTop: { titulo: '—', entradas: 0, ingresos: 0 } 
+  })
+
+  const coloresGrafico = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#EC4899'];
 
   useEffect(() => {
     const cargarAnaliticas = async () => {
@@ -46,7 +55,14 @@ export default function DashboardAdmin() {
       if (topPelis) {
         setTopPeliculas(topPelis as DatosTopPeliculas[])
         if (topPelis.length > 0) {
-          setTotales(prev => ({ ...prev, peliTop: topPelis[0].titulo }))
+          setTotales(prev => ({ 
+            ...prev, 
+            peliTop: {
+              titulo: topPelis[0].titulo,
+              entradas: topPelis[0].entradas_compradas,
+              ingresos: topPelis[0].dinero_recaudado || 0
+            } 
+          }))
         }
       }
 
@@ -56,32 +72,64 @@ export default function DashboardAdmin() {
     cargarAnaliticas()
   }, [])
 
-  if (cargando) return <div className="p-8 text-center text-gray-500 dark:text-gray-400 animate-pulse text-sm">Cargando métricas de negocio...</div>
+  useEffect(() => {
+    if (!cargando) {
+      const timer = setTimeout(() => setAnimarGraficas(true), 150)
+      return () => clearTimeout(timer)
+    }
+  }, [cargando])
+
+  if (cargando) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-20 flex flex-col justify-center items-center shadow-md transition-colors w-full h-[60vh]">
+        <img src="/rollopeli.gif" alt="Cargando" className="w-20 h-20 mb-4 drop-shadow-md" />
+        <p className="text-lg font-bold text-blue-600 dark:text-blue-500 animate-pulse tracking-wide">
+          Cargando analíticas del cine...
+        </p>
+      </div>
+    )
+  }
 
   const maxDinero = datosDiarios.length > 0 ? Math.max(...datosDiarios.map(d => d.dinero_ganado)) : 0;
-  const maxEntradasTop = topPeliculas.length > 0 ? Math.max(...topPeliculas.map(p => p.entradas_compradas)) : 0;
+  const totalEntradasTop = topPeliculas.reduce((acc, curr) => acc + curr.entradas_compradas, 0);
+
+  let porcentajeAcumuladoSVG = 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       
       {/* TARJETAS DE RESUMEN */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Caja Total Acumulada</p>
-          <p className="text-3xl font-black text-green-600 dark:text-green-400 mt-1">{totales.ingresos.toFixed(2)}€</p>
-          <p className="text-[10px] text-gray-400 mt-1">Suma de todas las entradas online registradas</p>
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-green-100 dark:bg-green-900/20 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 pointer-events-none"></div>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider relative z-10">Caja Total Acumulada</p>
+          <p className="text-3xl font-black text-green-600 dark:text-green-400 mt-1 relative z-10">{totales.ingresos.toFixed(2)}€</p>
+          <p className="text-[10px] text-gray-400 mt-1 relative z-10">Suma de todas las entradas online registradas</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Entradas Vendidas</p>
-          <p className="text-3xl font-black text-blue-600 dark:text-blue-400 mt-1">{totales.entradas} <span className="text-lg">tickets</span></p>
-          <p className="text-[10px] text-gray-400 mt-1">Volumen total de espectadores en salas</p>
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-100 dark:bg-blue-900/20 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 pointer-events-none"></div>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider relative z-10">Entradas Vendidas</p>
+          <p className="text-3xl font-black text-blue-600 dark:text-blue-400 mt-1 relative z-10">{totales.entradas} <span className="text-lg">tickets</span></p>
+          <p className="text-[10px] text-gray-400 mt-1 relative z-10">Volumen total de espectadores en salas</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors flex flex-col justify-center">
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Mayor Éxito Comercial</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-white mt-1 truncate" title={totales.peliTop}>{totales.peliTop}</p>
-          <p className="text-[10px] text-purple-600 dark:text-purple-400 font-bold mt-1.5 uppercase tracking-widest">Nº1 en Taquilla</p>
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors flex flex-col justify-center relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-100 dark:bg-purple-900/20 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 pointer-events-none"></div>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider relative z-10 flex items-center gap-2">
+            Mayor Éxito Comercial 🏆
+          </p>
+          <p className="text-xl font-bold text-gray-900 dark:text-white mt-1 truncate relative z-10" title={totales.peliTop.titulo}>{totales.peliTop.titulo}</p>
+          
+          {/* COMBINACIÓN DE TICKETS Y RECAUDACIÓN */}
+          <div className="flex gap-4 mt-2 relative z-10">
+            <p className="text-sm font-bold text-blue-500 flex items-center gap-1">
+              Entradas: {totales.peliTop.entradas}
+            </p>
+            <p className="text-sm font-bold text-green-500 flex items-center gap-1">
+              Ingresos: {totales.peliTop.ingresos.toFixed(2)}€
+            </p>
+          </div>
         </div>
       </div>
 
@@ -116,9 +164,13 @@ export default function DashboardAdmin() {
                         <span className="text-[10px] text-gray-300">{d.entradas_vendidas} tickets</span>
                       </div>
                       
+                      {/* BARRA ANIMADA DESDE ABAJO */}
                       <div 
-                        className="w-full max-w-[40px] bg-blue-500 hover:bg-blue-400 dark:bg-blue-600 dark:hover:bg-blue-500 rounded-t-md transition-all duration-700 ease-out"
-                        style={{ height: `${heightPorcentaje}%`, minHeight: '4px' }}
+                        className="w-full max-w-[40px] bg-blue-500 hover:bg-blue-400 dark:bg-blue-600 dark:hover:bg-blue-500 rounded-t-md transition-all duration-[1500ms] ease-out origin-bottom"
+                        style={{ 
+                          height: animarGraficas ? `${heightPorcentaje}%` : '0%', 
+                          minHeight: animarGraficas ? '4px' : '0px'
+                        }}
                       ></div>
                       
                       <span className="text-[10px] font-medium text-gray-400 mt-2 absolute -bottom-6 truncate w-full text-center">
@@ -133,40 +185,69 @@ export default function DashboardAdmin() {
         </div>
 
         {/* PELÍCULAS MÁS VENDIDAS */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
-          <div className="mb-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors flex flex-col">
+          <div className="mb-2">
             <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Top Películas</h3>
             <p className="text-xs text-gray-400">Ranking por volumen de tickets vendidos</p>
           </div>
           
-          <div className="mt-2 space-y-6">
-            {topPeliculas.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-10">No hay entradas vendidas todavía.</p>
-            ) : (
-              topPeliculas.map((peli, index) => {
-                const widthPorcentaje = maxEntradasTop > 0 ? (peli.entradas_compradas / maxEntradasTop) * 100 : 0;
+          {topPeliculas.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-10 flex-1 flex items-center justify-center">No hay entradas vendidas todavía.</p>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 flex-1 mt-4">
+              
+              {/* GRÁFICO CIRCULAR */}
+              <div className="relative w-40 h-40 shrink-0">
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-3xl font-black text-gray-900 dark:text-white leading-none">{totales.entradas}</span>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Total</span>
+                </div>
                 
-                return (
-                  <div key={peli.titulo} className="relative group">
-                    <div className="flex justify-between text-xs mb-2">
-                      <span className="font-bold text-gray-800 dark:text-gray-200 truncate pr-4">
-                        <span className="text-purple-500 dark:text-purple-400 mr-2">#{index + 1}</span>
+                <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90 drop-shadow-md">
+                  <circle cx="21" cy="21" r="15.91549431" fill="transparent" stroke="currentColor" className="text-gray-100 dark:text-gray-700" strokeWidth="6"></circle>
+                  
+                  {topPeliculas.map((peli, index) => {
+                    const porcentaje = totalEntradasTop > 0 ? (peli.entradas_compradas / totalEntradasTop) * 100 : 0;
+                    const offset = porcentajeAcumuladoSVG;
+                    porcentajeAcumuladoSVG += porcentaje;
+                    
+                    return (
+                      <circle 
+                        key={`circle-${peli.titulo}`}
+                        cx="21" cy="21" r="15.91549431" 
+                        fill="transparent" 
+                        stroke={coloresGrafico[index % coloresGrafico.length]} 
+                        strokeWidth="6"
+                        strokeDasharray={`${animarGraficas ? porcentaje : 0} ${animarGraficas ? 100 - porcentaje : 100}`}
+                        strokeDashoffset={-offset}
+                        className="transition-all duration-[1500ms] ease-out"
+                        strokeLinecap="round"
+                      ></circle>
+                    )
+                  })}
+                </svg>
+              </div>
+
+              {/* LEYENDA LATERAL */}
+              <div className="flex-1 w-full space-y-3">
+                {topPeliculas.map((peli, index) => (
+                  <div key={`legend-${peli.titulo}`} className="flex justify-between items-center text-xs group">
+                    <div className="flex items-center gap-3 truncate pr-4">
+                      <span 
+                        className="w-3 h-3 rounded-full shrink-0 shadow-sm transition-transform group-hover:scale-150" 
+                        style={{ backgroundColor: coloresGrafico[index % coloresGrafico.length] }}
+                      ></span>
+                      <span className="font-bold text-gray-800 dark:text-gray-200 truncate" title={peli.titulo}>
                         {peli.titulo}
                       </span>
-                      <span className="text-gray-500 font-bold">{peli.entradas_compradas} tickets</span>
                     </div>
-                    
-                    <div className="w-full bg-gray-100 dark:bg-gray-700 h-3.5 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-purple-500 dark:bg-purple-600 h-full rounded-full transition-all duration-1000 ease-out" 
-                        style={{ width: `${widthPorcentaje}%` }}
-                      ></div>
-                    </div>
+                    <span className="text-gray-500 font-bold shrink-0">{peli.entradas_compradas} tkts</span>
                   </div>
-                )
-              })
-            )}
-          </div>
+                ))}
+              </div>
+
+            </div>
+          )}
         </div>
 
       </div>
