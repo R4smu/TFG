@@ -51,7 +51,7 @@ Existen 3 tipos de usuarios: usuario invitado, registrado y empleado/administrad
 
 
 # 📁 Estructura del proyecto
-´´´
+```bash
 ├── docs/                 # Contiene documentación extensa del proyecto
 ├── node_modules/         # Dependencias necesarias para el funcionamiento del proyecto
 ├── public/               # Contiene recursos visuales para el diseño de la página
@@ -74,7 +74,7 @@ Existen 3 tipos de usuarios: usuario invitado, registrado y empleado/administrad
 ├── tsconfig.node.json    # Configuración de TypeScript
 ├── vercel.json           # Da las instrucciones específicas al servidor de Vercel sobre cómo enrutar la aplicación
 └── vite.config.ts        # Configura los plugins de React e indica a Vite debe empaquetar el proyecto.
-´´´
+```
 
 ---
 
@@ -128,53 +128,53 @@ Inicia la aplicación en modo local con npm run dev en la terminal dentro de la 
 
 
 # 📈 Trayectoría y evolución del proyecto
-Etapa de Planificación y Diseño
-Primeros conceptos, diseño de la arquitectura orientada a la venta de entradas y demás.
+Etapa de Planificación y Diseño<br>
+> Primeros conceptos, diseño de la arquitectura orientada a la venta de entradas y demás.
 
-07/10/2025 · Creación de la identidad visual: Desarrollo de la marca Cine Novavista, diseño de un logotipo con estética neo-retro y definición de la paleta de colores para la interfaz en modo oscuro.
+**07/10/2025** · Creación de la identidad visual: Desarrollo de la marca Cine Novavista, diseño de un logotipo con estética neo-retro y definición de la paleta de colores para la interfaz en modo oscuro.
 
-14/10/2025 · Reunión de toma de requisitos: Elaboración del documento para definir el alcance del sistema de reservas, la gestión de cartelera y los roles de administrador y taquillero.
+**14/10/2025** · Reunión de toma de requisitos: Elaboración del documento para definir el alcance del sistema de reservas, la gestión de cartelera y los roles de administrador y taquillero.
 
-21/10/2025 · Acta de reuniones: Redacción formal del documento para la validación técnica inicial y cierre de los acuerdos sobre los flujos de pago.
+**21/10/2025** · Acta de reuniones: Redacción formal del documento para la validación técnica inicial y cierre de los acuerdos sobre los flujos de pago.
 
-23/10/2025 · Puesta en marcha del proyecto: Definición del cronograma de despliegue y distribución de tareas para los módulos de usuario y administración.
+**23/10/2025** · Puesta en marcha del proyecto: Definición del cronograma de despliegue y distribución de tareas para los módulos de usuario y administración.
 
-28/10/2025 · Requisitos funcionales y no funcionales: Levantamiento de especificaciones técnicas, incluyendo la generación de códigos QR para las entradas y los tiempos máximos de carga de la cartelera.
+**28/10/2025** · Requisitos funcionales y no funcionales: Levantamiento de especificaciones técnicas, incluyendo la generación de códigos QR para las entradas y los tiempos máximos de carga de la cartelera.
 
-04/11/2025 · Presentación del proyecto: Exposición del primer borrador de interfaces (UI/UX), destacando la vista en cuadrícula de las películas y el mapa de la sala para la selección de butacas.
+**04/11/2025** · Presentación del proyecto: Exposición del primer borrador de interfaces (UI/UX), destacando la vista en cuadrícula de las películas y el mapa de la sala para la selección de butacas.
 
-25/11/2025 · Diseño de Base de Datos: Creación del modelo Entidad-Relación abarcando las tablas de Películas, Salas, Exhibiciones y Asientos.
+**25/11/2025** · Diseño de Base de Datos: Creación del modelo Entidad-Relación abarcando las tablas de Películas, Salas, Exhibiciones y Asientos.
 
-02/12/2025 · Presentación del Modelo de Datos: Demostración de la arquitectura de la base de datos, explicando cómo se manejará la concurrencia para evitar la doble reserva de una misma butaca.
+**02/12/2025** · Presentación del Modelo de Datos: Demostración de la arquitectura de la base de datos, explicando cómo se manejará la concurrencia para evitar la doble reserva de una misma butaca.
 
-09/12/2025 · Optimización del esquema relacional: Normalización de la base de datos y ajustes en la vinculación entre los perfiles de usuarios registrados y su historial de compras.
+**09/12/2025** · Optimización del esquema relacional: Normalización de la base de datos y ajustes en la vinculación entre los perfiles de usuarios registrados y su historial de compras.
 
-16/12/2025 · Cierre de Fase 1: Revisión global del planteamiento y validación final antes de iniciar la programación del Frontend (catálogo) y Backend (lógica de ventas).
+**16/12/2025** · Cierre de Fase 1: Revisión global del planteamiento y validación final antes de iniciar la programación del Frontend (catálogo) y Backend (lógica de ventas).<br>
 
-Etapa de Desarrollo y Despliegue
-Realización del código, integración de pasarelas y pruebas con varias demos.
+Etapa de Desarrollo y Despliegue<br>
+> Realización del código, integración de pasarelas y pruebas con varias demos.
 
-13/01/2026 · Presentación del primer prototipo funcional: Exhibición de la landing page dinámica, mostrando la cartelera en tiempo real y el carrusel de estrenos.
+**13/01/2026** · Presentación del primer prototipo funcional: Exhibición de la landing page dinámica, mostrando la cartelera en tiempo real y el carrusel de estrenos.
 
-20/01/2026 · Revisión de selección de butacas: Demostración del mapa interactivo de la sala. Asignación de colores dinámicos (libre/ocupado).
+**20/01/2026** · Revisión de selección de butacas: Demostración del mapa interactivo de la sala. Asignación de colores dinámicos (libre/ocupado).
 
-27/01/2026 · Validación de módulos: Pruebas del flujo completo de compra. Simulación de transacciones y verificación del envío automatizado de las entradas (PDF/QR).
+**27/01/2026** · Validación de módulos: Pruebas del flujo completo de compra. Simulación de transacciones y verificación del envío automatizado de las entradas (PDF/QR).
 
-03/02/2026 · Presentación del panel de administración: Demostración de la gestión interna: añadir nuevas películas, asignar horarios en las diferentes salas.
+**03/02/2026** · Presentación del panel de administración: Demostración de la gestión interna: añadir nuevas películas, asignar horarios en las diferentes salas.
 
-10/02/2026 · Desarrollo del flujo de escáner: Creación de la vista específica para que los empleados validen las entradas mediante lector de QR en la puerta de la sala.
+**10/02/2026** · Desarrollo del flujo de escáner: Creación de la vista específica para que los empleados validen las entradas mediante lector de QR en la puerta de la sala.
 
-17/02/2026 · Refactorización de la Landing Page: Pulido del reproductor de tráilers integrado y optimización de las imágenes promocionales para una carga rápida.
+**17/02/2026** · Refactorización de la Landing Page: Pulido del reproductor de tráilers integrado y optimización de las imágenes promocionales para una carga rápida.
 
-24/02/2026 · Elaboración de manuales: Documentación técnica sobre la infraestructura y justificación del uso de la pasarela de pagos implementada.
+**24/02/2026** · Elaboración de manuales: Documentación técnica sobre la infraestructura y justificación del uso de la pasarela de pagos implementada.
 
-03/03/2026 · Redacción de documentación de usuario: Publicación de la guía operativa dirigida a los empleados del cine (uso de la TPV virtual y control de accesos).
+**03/03/2026** · Redacción de documentación de usuario: Publicación de la guía operativa dirigida a los empleados del cine (uso de la TPV virtual y control de accesos).
 
 Tutorías
 
-06/05/2026 · Reunión grupal con Paco: Tema principal centrado en los manuales a entregar y el código final.
+**06/05/2026** · Reunión grupal con Paco: Tema principal centrado en los manuales a entregar y el código final.
 
-25/05/2026 · Reunión de los 2 grupos de DAW con Paco: Sesión orientada a los tiempos de presentación.
+**25/05/2026** · Reunión de los 2 grupos de DAW con Paco: Sesión orientada a los tiempos de presentación.
 
 
 ---
