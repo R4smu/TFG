@@ -118,7 +118,6 @@ export default function MovieModal({ pelicula, onClose }: MovieModalProps) {
       fechacompra: new Date().toISOString(),
       preciofinal: parseFloat(precioUnidadCobrado.toFixed(2)),
       estado: 'Confirmada',
-      tipocompra: 'Online',
       comprobanteurl: `/ticket/${crypto.randomUUID()}`
     }))
 
